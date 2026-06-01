@@ -55,6 +55,42 @@ class MasterResume:
         return "\n".join(lines)
 
     @classmethod
+    def from_dict(cls, data: dict) -> "MasterResume":
+        experience = [
+            ExperienceEntry(
+                title=exp["title"],
+                company=exp["company"],
+                date=exp["date"],
+                location=exp["location"],
+                role_slug=exp["role_slug"],
+                bullets=exp["bullets"],
+            )
+            for exp in data.get("experience", [])
+        ]
+        projects = [
+            ProjectEntry(
+                title=proj["title"],
+                tech=proj["tech"],
+                date=proj["date"],
+                project_slug=proj["project_slug"],
+                bullets=proj["bullets"],
+            )
+            for proj in data.get("projects", [])
+        ]
+        return cls(
+            name=data.get("name", ""),
+            tagline=data.get("tagline", ""),
+            contact=data.get("contact", {}),
+            summary=data.get("summary", ""),
+            skills=data.get("skills", {}),
+            experience=experience,
+            projects=projects,
+            education=data.get("education", []),
+            certifications=data.get("certifications", []),
+            languages=data.get("languages", []),
+        )
+
+    @classmethod
     def load(cls) -> "MasterResume":
         return cls(
             name="Ammar Khalid",

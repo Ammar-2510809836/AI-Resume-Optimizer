@@ -61,3 +61,35 @@ def test_strips_markdown_fences(mock_groq_cls):
     client = LLMClient(api_key="test-key")
     result = client.tailor("job", MasterResume.load())
     assert result.summary == "Tailored summary for this role."
+
+@patch("core.llm_client.Groq")
+def test_parse_resume(mock_groq_cls):
+    mock_client = MagicMock()
+    mock_groq_cls.return_value = mock_client
+    parser_output = {
+        "name": "Jane Doe",
+        "tagline": "Software Engineer",
+        "contact": {
+            "email": "jane@example.com",
+            "phone": "123-456-7890",
+            "location": "NY",
+            "linkedin": "",
+            "github": ""
+        },
+        "summary": "Experienced engineer.",
+        "skills": {"Languages": ["Python"]},
+        "experience": [],
+        "projects": [],
+        "education": [],
+        "certifications": [],
+        "languages": []
+    }
+    mock_client.chat.completions.create.return_value = MagicMock(
+        choices=[MagicMock(message=MagicMock(content=json.dumps(parser_output)))]
+    )
+    client = LLMClient(api_key="test-key")
+    result = client.parse_resume("Jane Doe CV text")
+    assert result["name"] == "Jane Doe"
+    assert result["tagline"] == "Software Engineer"
+    assert result["contact"]["email"] == "jane@example.com"
+

@@ -28,3 +28,14 @@ def test_inject_preserves_original_bullet_when_not_overridden(engine):
 def test_inject_preserves_certifications(engine):
     html = engine.inject({})
     assert "AWS Certified Developer" in html
+
+def test_inject_minimalist_template(engine):
+    html = engine.inject({}, template_id="minimalist")
+    assert "<html" in html
+    assert "Ammar Khalid" in html
+
+def test_inject_tech_template(engine):
+    html = engine.inject({}, template_id="tech")
+    assert "<html" in html
+    assert "Ammar Khalid" in html
+

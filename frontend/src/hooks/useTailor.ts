@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import type { DiffResult, ApprovedSections, AppState, TailorResponse } from '../types'
+import type { DiffResult, ApprovedSections, AppState, TailorResponse, ParsedResume } from '../types'
 
 interface UseTailorReturn {
   state: AppState
@@ -7,8 +7,13 @@ interface UseTailorReturn {
   approvals: Record<string, boolean>
   tailoredSkills: Record<string, string[]>
   extractedKeywords: string[]
+  parsedResume: ParsedResume | null
+  templateId: string
   error: string | null
   submitJD: (jd: string) => Promise<void>
+  parseResumeText: (text: string) => Promise<void>
+  saveParsedResume: (updated: ParsedResume) => void
+  setTemplateId: (tplId: string) => void
   toggleApproval: (sectionId: string) => void
   approveAll: () => void
   generatePDF: () => Promise<void>
@@ -22,7 +27,36 @@ export function useTailor(): UseTailorReturn {
   const [tailoredSkills, setTailoredSkills] = useState<Record<string, string[]>>({})
   const [originalSkills, setOriginalSkills] = useState<Record<string, string[]>>({})
   const [extractedKeywords, setExtractedKeywords] = useState<string[]>([])
+  const [parsedResume, setParsedResume] = useState<ParsedResume | null>(null)
+  const [templateId, setTemplateId] = useState<string>('modern')
   const [error, setError] = useState<string | null>(null)
+
+  const parseResumeText = useCallback(async (text: string) => {
+    setState('parsing')
+    setError(null)
+    try {
+      const res = await fetch('/api/parse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resume_text: text }),
+      })
+      if (!res.ok) {
+        const detail = await res.json().catch(() => ({ detail: res.statusText }))
+        throw new Error(detail.detail ?? `HTTP ${res.status}`)
+      }
+      const data: ParsedResume = await res.json()
+      setParsedResume(data)
+      setState('editing_parsed')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Parsing failed')
+      setState('idle')
+    }
+  }, [])
+
+  const saveParsedResume = useCallback((updated: ParsedResume) => {
+    setParsedResume(updated)
+    setState('idle') // Return to main screen, ready to paste JD
+  }, [])
 
   const submitJD = useCallback(async (jd: string) => {
     setState('loading')
@@ -31,7 +65,10 @@ export function useTailor(): UseTailorReturn {
       const res = await fetch('/api/tailor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ job_description: jd }),
+        body: JSON.stringify({
+          job_description: jd,
+          resume_data: parsedResume // dynamically pass user parsed resume!
+        }),
       })
       if (!res.ok) {
         const detail = await res.json().catch(() => ({ detail: res.statusText }))
@@ -55,7 +92,7 @@ export function useTailor(): UseTailorReturn {
       setError(err instanceof Error ? err.message : 'Unknown error')
       setState('idle')
     }
-  }, [])
+  }, [parsedResume])
 
   const toggleApproval = useCallback((sectionId: string) => {
     setApprovals(prev => ({ ...prev, [sectionId]: !prev[sectionId] }))
@@ -109,11 +146,14 @@ export function useTailor(): UseTailorReturn {
     }
 
     try {
-      const approved = buildApprovedSections(diffs, approvals, tailoredSkills, originalSkills)
+      const approved = buildApprovedSections(diffs, approvals, tailoredSkills, originalSkills, parsedResume)
       const res = await fetch('/api/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ approved_sections: approved }),
+        body: JSON.stringify({
+          approved_sections: approved,
+          template_id: templateId // dynamically pass selected template!
+        }),
       })
       if (!res.ok) throw new Error('Preview generation failed')
       const html = await res.text()
@@ -127,7 +167,7 @@ export function useTailor(): UseTailorReturn {
         // Fallback: If new tab was blocked by browser's popup blocker, trigger a direct file download
         const a = document.createElement('a')
         a.href = url
-        a.download = 'Ammar_Khalid_Tailored_Resume.html'
+        a.download = `${parsedResume?.name || 'Ammar_Khalid'}_Tailored_Resume.html`
         document.body.appendChild(a)
         a.click()
         document.body.removeChild(a)
@@ -148,7 +188,7 @@ export function useTailor(): UseTailorReturn {
         setError(`Failed to generate resume: ${err instanceof Error ? err.message : 'Unknown error'}`)
       }
     }
-  }, [diffs, approvals, tailoredSkills, originalSkills])
+  }, [diffs, approvals, tailoredSkills, originalSkills, parsedResume, templateId])
 
   const reset = useCallback(() => {
     setState('idle')
@@ -157,10 +197,17 @@ export function useTailor(): UseTailorReturn {
     setTailoredSkills({})
     setOriginalSkills({})
     setExtractedKeywords([])
+    setParsedResume(null)
+    setTemplateId('modern')
     setError(null)
   }, [])
 
-  return { state, diffs, approvals, tailoredSkills, extractedKeywords, error, submitJD, toggleApproval, approveAll, generatePDF, reset }
+  return {
+    state, diffs, approvals, tailoredSkills, extractedKeywords,
+    parsedResume, templateId, error,
+    submitJD, parseResumeText, saveParsedResume, setTemplateId,
+    toggleApproval, approveAll, generatePDF, reset
+  }
 }
 
 function buildApprovedSections(
@@ -168,8 +215,12 @@ function buildApprovedSections(
   approvals: Record<string, boolean>,
   tailoredSkills: Record<string, string[]>,
   originalSkills: Record<string, string[]>,
+  parsedResume: ParsedResume | null,
 ): ApprovedSections {
   const sections: ApprovedSections = { bullets: {} }
+  if (parsedResume) {
+    sections.resume_data = parsedResume
+  }
 
   for (const diff of diffs) {
     const useNew = approvals[diff.section_id] ?? true

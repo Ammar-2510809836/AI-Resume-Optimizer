@@ -13,13 +13,15 @@ class ResumeEngine:
         )
         self._master = MasterResume.load()
 
-    def inject(self, approved: dict) -> str:
-        summary = approved.get("summary", self._master.summary)
-        skills = approved.get("skills", self._master.skills)
+    def inject(self, approved: dict, template_id: str = "modern") -> str:
+        resume = MasterResume.from_dict(approved["resume_data"]) if "resume_data" in approved else self._master
+
+        summary = approved.get("summary", resume.summary)
+        skills = approved.get("skills", resume.skills)
         approved_bullets: dict[str, str] = approved.get("bullets", {})
 
         experience = []
-        for exp in self._master.experience:
+        for exp in resume.experience:
             bullets = [
                 approved_bullets.get(f"{exp.role_slug}_{i}", b)
                 for i, b in enumerate(exp.bullets)
@@ -27,23 +29,31 @@ class ResumeEngine:
             experience.append({**exp.__dict__, "bullets": bullets})
 
         projects = []
-        for proj in self._master.projects:
+        for proj in resume.projects:
             bullets = [
                 approved_bullets.get(f"{proj.project_slug}_{i}", b)
                 for i, b in enumerate(proj.bullets)
             ]
             projects.append({**proj.__dict__, "bullets": bullets})
 
-        template = self._env.get_template(self._template_file)
+        # Dynamically resolve template file based on template_id
+        template_files = {
+            "modern": "resume.html",
+            "minimalist": "resume_minimalist.html",
+            "tech": "resume_tech.html",
+        }
+        tpl_file = template_files.get(template_id, self._template_file)
+
+        template = self._env.get_template(tpl_file)
         return template.render(
-            name=self._master.name,
-            tagline=self._master.tagline,
-            contact=self._master.contact,
+            name=resume.name,
+            tagline=resume.tagline,
+            contact=resume.contact,
             summary=summary,
             skills=skills,
             experience=experience,
             projects=projects,
-            education=self._master.education,
-            certifications=self._master.certifications,
-            languages=self._master.languages,
+            education=resume.education,
+            certifications=resume.certifications,
+            languages=resume.languages,
         )

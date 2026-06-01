@@ -32,10 +32,29 @@ _resume_engine = ResumeEngine(_template_path)
 
 class TailorRequest(BaseModel):
     job_description: str
+    resume_data: dict | None = None
+
+
+class ParseRequest(BaseModel):
+    resume_text: str
 
 
 class PreviewRequest(BaseModel):
     approved_sections: dict
+    template_id: str | None = "modern"
+
+
+@app.post("/api/parse")
+async def parse_resume(body: ParseRequest):
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GROQ_API_KEY not configured")
+    try:
+        client = LLMClient(api_key=api_key)
+        parsed = client.parse_resume(body.resume_text)
+        return parsed
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
 
 @app.post("/api/tailor")
@@ -44,25 +63,27 @@ async def tailor_resume(body: TailorRequest):
     if not api_key:
         raise HTTPException(status_code=500, detail="GROQ_API_KEY not configured")
 
+    resume = MasterResume.from_dict(body.resume_data) if body.resume_data else _master
+
     try:
         client = LLMClient(api_key=api_key)
-        tailored = client.tailor(body.job_description, _master)
+        tailored = client.tailor(body.job_description, resume)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
     jd_keywords = {k.lower() for k in tailored.extracted_keywords}
 
     pairs: list[tuple[str, str, str]] = [
-        ("summary", _master.summary, tailored.summary)
+        ("summary", resume.summary, tailored.summary)
     ]
-    for cat, orig_skills in _master.skills.items():
+    for cat, orig_skills in resume.skills.items():
         tail_skills = tailored.skills.get(cat, orig_skills)
         pairs.append((f"skills_{cat}", ", ".join(orig_skills), ", ".join(tail_skills)))
-    for exp in _master.experience:
+    for exp in resume.experience:
         for i, orig in enumerate(exp.bullets):
             bid = f"{exp.role_slug}_{i}"
             pairs.append((bid, orig, tailored.bullets.get(bid, orig)))
-    for proj in _master.projects:
+    for proj in resume.projects:
         for i, orig in enumerate(proj.bullets):
             bid = f"{proj.project_slug}_{i}"
             pairs.append((bid, orig, tailored.bullets.get(bid, orig)))
@@ -87,5 +108,5 @@ async def tailor_resume(body: TailorRequest):
 
 @app.post("/api/preview", response_class=HTMLResponse)
 async def preview_resume(body: PreviewRequest):
-    html = _resume_engine.inject(body.approved_sections)
+    html = _resume_engine.inject(body.approved_sections, template_id=body.template_id or "modern")
     return HTMLResponse(content=html)

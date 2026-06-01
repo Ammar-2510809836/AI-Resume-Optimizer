@@ -86,3 +86,22 @@ class LLMClient:
             bullets=data["bullets"],
             extracted_keywords=data.get("extracted_keywords", []),
         )
+
+    def parse_resume(self, text: str) -> dict:
+        from core.parser_prompt import _PARSER_SYSTEM_PROMPT
+        response = self._client.chat.completions.create(
+            model=self._model,
+            messages=[
+                {"role": "system", "content": _PARSER_SYSTEM_PROMPT},
+                {"role": "user", "content": f"PARSE THIS RESUME TEXT:\n{text}"},
+            ],
+            temperature=0.2,
+            max_tokens=4096,
+        )
+        raw = response.choices[0].message.content.strip()
+        if raw.startswith("```"):
+            parts = raw.split("```")
+            raw = parts[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        return json.loads(raw.strip())
