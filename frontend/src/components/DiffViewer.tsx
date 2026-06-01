@@ -91,16 +91,31 @@ function DiffCard({ diff, approved, onToggle }: CardProps) {
 interface Props {
   diffs: DiffResult[]
   approvals: Record<string, boolean>
+  extractedKeywords?: string[]
   onToggle: (sectionId: string) => void
   onApproveAll: () => void
 }
 
-export function DiffViewer({ diffs, approvals, onToggle, onApproveAll }: Props) {
+export function DiffViewer({ diffs, approvals, extractedKeywords = [], onToggle, onApproveAll }: Props) {
   const approvedCount = Object.values(approvals).filter(Boolean).length
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex justify-between items-center text-sm text-gray-500">
+      {/* ATS Keywords Pill Container */}
+      {extractedKeywords.length > 0 && (
+        <div className="bg-[#f0f4f8] rounded-lg p-3.5 border border-blue-100/50 mb-1">
+          <p className="font-semibold text-[10px] text-[#0F4C81] uppercase tracking-wider mb-2">🎯 Targeted ATS Keywords</p>
+          <div className="flex flex-wrap gap-1.5">
+            {extractedKeywords.map((kw, i) => (
+              <span key={i} className="text-[11px] font-semibold bg-white text-[#0F4C81] px-2.5 py-0.5 rounded-full border border-blue-200/50 shadow-sm">
+                {kw}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-between items-center text-sm text-gray-500 mt-1">
         <span>{approvedCount} of {diffs.length} sections approved</span>
         <button onClick={onApproveAll} className="text-[#0F4C81] hover:underline text-xs">
           Approve all

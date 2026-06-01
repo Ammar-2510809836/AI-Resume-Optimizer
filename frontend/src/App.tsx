@@ -5,7 +5,7 @@ import { LoadingState } from './components/LoadingState'
 
 export default function App() {
   const {
-    state, diffs, approvals, error,
+    state, diffs, approvals, extractedKeywords, error,
     submitJD, toggleApproval, approveAll, generatePDF, reset,
   } = useTailor()
 
@@ -75,6 +75,7 @@ export default function App() {
                   <DiffViewer
                     diffs={diffs}
                     approvals={approvals}
+                    extractedKeywords={extractedKeywords}
                     onToggle={toggleApproval}
                     onApproveAll={approveAll}
                   />

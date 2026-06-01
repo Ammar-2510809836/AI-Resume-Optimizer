@@ -4,6 +4,7 @@ from core.llm_client import LLMClient, TailoredSections
 from core.master_resume import MasterResume
 
 GOOD_JSON = json.dumps({
+    "extracted_keywords": ["Python", "RAG", "FastAPI"],
     "summary": "Tailored summary for this role.",
     "skills": {"AI & LLM Engineering": ["RAG", "LLM Orchestration"]},
     "bullets": {"fhk_0": "Rephrased FH Kufstein bullet.", "techbit_0": "Rephrased TechBit bullet."},
@@ -22,6 +23,7 @@ def test_tailor_returns_tailored_sections(mock_groq_cls):
     assert result.summary == "Tailored summary for this role."
     assert "AI & LLM Engineering" in result.skills
     assert "fhk_0" in result.bullets
+    assert result.extracted_keywords == ["Python", "RAG", "FastAPI"]
 
 @patch("core.llm_client.Groq")
 def test_tailor_retries_on_bad_json(mock_groq_cls):

@@ -16,6 +16,7 @@ export interface DiffResult {
 export interface TailorResponse {
   tailored_skills: Record<string, string[]>
   diffs: DiffResult[]
+  extracted_keywords?: string[]
 }
 
 export interface ApprovedSections {

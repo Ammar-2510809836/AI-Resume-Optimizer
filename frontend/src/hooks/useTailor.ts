@@ -6,6 +6,7 @@ interface UseTailorReturn {
   diffs: DiffResult[]
   approvals: Record<string, boolean>
   tailoredSkills: Record<string, string[]>
+  extractedKeywords: string[]
   error: string | null
   submitJD: (jd: string) => Promise<void>
   toggleApproval: (sectionId: string) => void
@@ -20,6 +21,7 @@ export function useTailor(): UseTailorReturn {
   const [approvals, setApprovals] = useState<Record<string, boolean>>({})
   const [tailoredSkills, setTailoredSkills] = useState<Record<string, string[]>>({})
   const [originalSkills, setOriginalSkills] = useState<Record<string, string[]>>({})
+  const [extractedKeywords, setExtractedKeywords] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
 
   const submitJD = useCallback(async (jd: string) => {
@@ -38,6 +40,7 @@ export function useTailor(): UseTailorReturn {
       const data: TailorResponse = await res.json()
       setDiffs(data.diffs)
       setTailoredSkills(data.tailored_skills)
+      setExtractedKeywords(data.extracted_keywords ?? [])
       const origSkills: Record<string, string[]> = {}
       data.diffs.forEach(d => {
         if (d.section_id.startsWith('skills_')) {
@@ -153,10 +156,11 @@ export function useTailor(): UseTailorReturn {
     setApprovals({})
     setTailoredSkills({})
     setOriginalSkills({})
+    setExtractedKeywords([])
     setError(null)
   }, [])
 
-  return { state, diffs, approvals, tailoredSkills, error, submitJD, toggleApproval, approveAll, generatePDF, reset }
+  return { state, diffs, approvals, tailoredSkills, extractedKeywords, error, submitJD, toggleApproval, approveAll, generatePDF, reset }
 }
 
 function buildApprovedSections(

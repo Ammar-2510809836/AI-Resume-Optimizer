@@ -50,10 +50,7 @@ async def tailor_resume(body: TailorRequest):
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
-    jd_keywords = {
-        w.lower().strip(".,;:()[]") for w in body.job_description.split()
-        if len(w) > 4
-    }
+    jd_keywords = {k.lower() for k in tailored.extracted_keywords}
 
     pairs: list[tuple[str, str, str]] = [
         ("summary", _master.summary, tailored.summary)
@@ -74,6 +71,7 @@ async def tailor_resume(body: TailorRequest):
 
     return {
         "tailored_skills": tailored.skills,
+        "extracted_keywords": tailored.extracted_keywords,
         "diffs": [
             {
                 "section_id": d.section_id,

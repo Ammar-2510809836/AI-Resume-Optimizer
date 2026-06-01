@@ -9,6 +9,7 @@ class TailoredSections:
     summary: str
     skills: dict[str, list[str]]
     bullets: dict[str, str]
+    extracted_keywords: list[str]
 
 
 _SYSTEM_PROMPT = """You are a professional resume writer. Tailor a resume to a job description.
@@ -16,13 +17,17 @@ _SYSTEM_PROMPT = """You are a professional resume writer. Tailor a resume to a j
 RULES:
 - Return ONLY valid JSON — no markdown fences, no explanation, just the JSON object.
 - Never invent job titles, companies, dates, or metrics not present in the original.
-- Rephrase bullet points to emphasize relevant skills; preserve all numbers and facts exactly.
+- Rephrase bullet points to emphasize relevant skills; preserve all numbers, facts, and metrics exactly.
+- Make numbers, percentages, and key performance indicators (KPIs) highly prominent by wrapping them in <strong> tags (e.g., <strong>99.9% uptime</strong> or <strong>40% reduction</strong>).
+- Ensure tailored bullets remain outcome-driven, highlighting quantified results and metrics prominently near the beginning of the bullet point where appropriate.
 - Preserve any HTML tags like <strong> that appear in the original bullets.
 - Rewrite the summary to open with the most relevant experience for this role.
 - Reorder skill categories and items by relevance to the JD.
+- Dynamically extract a list of 5-15 high-fidelity ATS keywords (specific technical skills, tools, languages, methodologies, or platforms) from the job description and return them under "extracted_keywords".
 
 JSON SCHEMA (return exactly this structure):
 {
+  "extracted_keywords": ["keyword1", "keyword2", "keyword3"],
   "summary": "rewritten summary paragraph",
   "skills": {"Category Name": ["skill1", "skill2"]},
   "bullets": {"bullet_id": "rewritten bullet text"}
@@ -77,4 +82,5 @@ class LLMClient:
             summary=data["summary"],
             skills=data["skills"],
             bullets=data["bullets"],
+            extracted_keywords=data.get("extracted_keywords", []),
         )
