@@ -63,18 +63,75 @@ export function useTailor(): UseTailorReturn {
   }, [])
 
   const generatePDF = useCallback(async () => {
-    const approved = buildApprovedSections(diffs, approvals, tailoredSkills, originalSkills)
-    const res = await fetch('/api/preview', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ approved_sections: approved }),
-    })
-    if (!res.ok) throw new Error('Preview generation failed')
-    const html = await res.text()
-    const blob = new Blob([html], { type: 'text/html' })
-    const url = URL.createObjectURL(blob)
-    window.open(url, '_blank')
-    setTimeout(() => URL.revokeObjectURL(url), 60_000)
+    // Open a blank new tab immediately on click to bypass the browser's popup blocker
+    const pdfWindow = window.open('', '_blank')
+    if (pdfWindow) {
+      pdfWindow.document.write(`
+        <html>
+          <head>
+            <title>Generating PDF...</title>
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                margin: 0;
+                background: #f4f7f6;
+                color: #2c3e50;
+                text-align: center;
+              }
+              .spinner {
+                border: 4px solid rgba(0,0,0,0.1);
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                border-left-color: #0F4C81;
+                animation: spin 1s linear infinite;
+                margin-bottom: 16px;
+              }
+              @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            </style>
+          </head>
+          <body>
+            <div class="spinner"></div>
+            <h2>Generating your tailored resume...</h2>
+            <p style="color: #7f8c8d; font-size: 14px;">This will open the print preview shortly.</p>
+          </body>
+        </html>
+      `)
+    }
+
+    try {
+      const approved = buildApprovedSections(diffs, approvals, tailoredSkills, originalSkills)
+      const res = await fetch('/api/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approved_sections: approved }),
+      })
+      if (!res.ok) throw new Error('Preview generation failed')
+      const html = await res.text()
+      const blob = new Blob([html], { type: 'text/html' })
+      const url = URL.createObjectURL(blob)
+      
+      if (pdfWindow) {
+        pdfWindow.location.href = url
+        setTimeout(() => URL.revokeObjectURL(url), 60_000)
+      }
+    } catch (err) {
+      if (pdfWindow) {
+        pdfWindow.document.write(`
+          <html>
+            <body style="font-family: sans-serif; padding: 20px; color: #c0392b;">
+              <h2>Error generating preview</h2>
+              <p>${err instanceof Error ? err.message : 'Unknown error'}</p>
+            </body>
+          </html>
+        `)
+      }
+    }
   }, [diffs, approvals, tailoredSkills, originalSkills])
 
   const reset = useCallback(() => {
