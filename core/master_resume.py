@@ -110,6 +110,7 @@ class MasterResume:
                     date="Mar 2026 – Present",
                     location="Kufstein, Austria",
                     role_slug="fhk",
+                    # Experience bullets use <strong>Label:</strong> format — rendered as HTML in resume template
                     bullets=[
                         "<strong>LLM & ML Integration:</strong> Integrating Large Language Models to interpret complex sensor telemetry, applying ML frameworks to predict alpine slope conditions and enhance avalanche safety for ski slope management.",
                         "<strong>Edge AI Architecture:</strong> Developing fault-tolerant continuous snow quality monitoring edge devices (ESP32) using impedance spectroscopy, architecting secure zero-loss telemetry pipelines under extreme alpine conditions.",
@@ -123,6 +124,7 @@ class MasterResume:
                     date="Sep 2023 – Jul 2025",
                     location="Remote / Hybrid",
                     role_slug="techbit",
+                    # Experience bullets use <strong>Label:</strong> format — rendered as HTML in resume template
                     bullets=[
                         "<strong>Cloud Architecture:</strong> Architected resilient AWS infrastructures (EC2, Lambda, S3, ELB, CloudFront) supporting 10,000+ concurrent users with 99.9% uptime, including AI workload deployment pipelines.",
                         "<strong>Microservices & ML Infrastructure:</strong> Designed scalable microservices on AWS ECS using Docker, improving resource efficiency by 35%; infrastructure enabled ML model serving across multiple engineering teams.",

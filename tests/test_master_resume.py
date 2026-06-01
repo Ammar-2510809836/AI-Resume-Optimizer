@@ -33,3 +33,9 @@ def test_to_llm_text_contains_bullet_ids():
     assert "[techbit_0]" in text
     assert "[dairy_sentinel_0]" in text
     assert "[interview_copilot_0]" in text
+
+def test_to_llm_text_has_all_sections():
+    resume = MasterResume.load()
+    text = resume.to_llm_text()
+    for section in ["TAGLINE:", "SUMMARY:", "SKILLS:", "EXPERIENCE:", "PROJECTS:"]:
+        assert section in text, f"Missing section: {section}"
