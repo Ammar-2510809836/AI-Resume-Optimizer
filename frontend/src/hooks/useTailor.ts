@@ -64,7 +64,7 @@ export function useTailor(): UseTailorReturn {
 
   const generatePDF = useCallback(async () => {
     // Open a blank new tab immediately on click to bypass the browser's popup blocker
-    const pdfWindow = window.open('', '_blank')
+    let pdfWindow = window.open('', '_blank')
     if (pdfWindow) {
       pdfWindow.document.write(`
         <html>
@@ -102,6 +102,7 @@ export function useTailor(): UseTailorReturn {
           </body>
         </html>
       `)
+      pdfWindow.document.close()
     }
 
     try {
@@ -116,12 +117,21 @@ export function useTailor(): UseTailorReturn {
       const blob = new Blob([html], { type: 'text/html' })
       const url = URL.createObjectURL(blob)
       
-      if (pdfWindow) {
+      if (pdfWindow && !pdfWindow.closed) {
         pdfWindow.location.href = url
+        setTimeout(() => URL.revokeObjectURL(url), 60_000)
+      } else {
+        // Fallback: If new tab was blocked by browser's popup blocker, trigger a direct file download
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'Ammar_Khalid_Tailored_Resume.html'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
         setTimeout(() => URL.revokeObjectURL(url), 60_000)
       }
     } catch (err) {
-      if (pdfWindow) {
+      if (pdfWindow && !pdfWindow.closed) {
         pdfWindow.document.write(`
           <html>
             <body style="font-family: sans-serif; padding: 20px; color: #c0392b;">
@@ -130,6 +140,9 @@ export function useTailor(): UseTailorReturn {
             </body>
           </html>
         `)
+        pdfWindow.document.close()
+      } else {
+        setError(`Failed to generate resume: ${err instanceof Error ? err.message : 'Unknown error'}`)
       }
     }
   }, [diffs, approvals, tailoredSkills, originalSkills])
