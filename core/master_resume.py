@@ -74,7 +74,7 @@ class MasterResume:
                 "automation bot (Llama Vision + Google APIs). AWS Certified Developer with 2+ years architecting "
                 "cloud infrastructure for 10,000+ concurrent users. Currently a Research Assistant at FH Kufstein "
                 "integrating ML/LLM frameworks for alpine IoT safety systems. Expert across the full AI product "
-                "stack: prompt engineering, retrieval pipelines, LLM orchestration, and cloud-native deployment."
+                "stack: prompt engineering, retrieval pipelines, LLM orchestration, and clod-native deployment."
             ),
             skills={
                 "AI & LLM Engineering": [

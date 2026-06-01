@@ -17,6 +17,8 @@ _SYSTEM_PROMPT = """You are a professional resume writer. Tailor a resume to a j
 RULES:
 - Return ONLY valid JSON — no markdown fences, no explanation, just the JSON object.
 - Never invent job titles, companies, dates, or metrics not present in the original.
+- Deeply reframe and rewrite the framing, context, and wording of the summary, projects, and work experience bullets to align perfectly with the target role's core responsibilities and professional language.
+- For example, if the JD is for a PM, Support, or Agent-based role, rewrite deep technical details to focus on collaboration, user interaction, SLAs, system reliability, and pipeline automation.
 - Rephrase bullet points to emphasize relevant skills; preserve all numbers, facts, and metrics exactly.
 - Make numbers, percentages, and key performance indicators (KPIs) highly prominent by wrapping them in <strong> tags (e.g., <strong>99.9% uptime</strong> or <strong>40% reduction</strong>).
 - Ensure tailored bullets remain outcome-driven, highlighting quantified results and metrics prominently near the beginning of the bullet point where appropriate.
@@ -65,7 +67,7 @@ class LLMClient:
                 {"role": "system", "content": _SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt},
             ],
-            temperature=0.3,
+            temperature=0.5,
             max_tokens=4096,
         )
         return response.choices[0].message.content
