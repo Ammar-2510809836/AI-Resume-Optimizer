@@ -19,6 +19,7 @@ export function useTailor(): UseTailorReturn {
   const [diffs, setDiffs] = useState<DiffResult[]>([])
   const [approvals, setApprovals] = useState<Record<string, boolean>>({})
   const [tailoredSkills, setTailoredSkills] = useState<Record<string, string[]>>({})
+  const [originalSkills, setOriginalSkills] = useState<Record<string, string[]>>({})
   const [error, setError] = useState<string | null>(null)
 
   const submitJD = useCallback(async (jd: string) => {
@@ -37,6 +38,14 @@ export function useTailor(): UseTailorReturn {
       const data: TailorResponse = await res.json()
       setDiffs(data.diffs)
       setTailoredSkills(data.tailored_skills)
+      const origSkills: Record<string, string[]> = {}
+      data.diffs.forEach(d => {
+        if (d.section_id.startsWith('skills_')) {
+          const cat = d.section_id.slice('skills_'.length)
+          origSkills[cat] = d.original.split(', ')
+        }
+      })
+      setOriginalSkills(origSkills)
       setApprovals(Object.fromEntries(data.diffs.map(d => [d.section_id, true])))
       setState('reviewing')
     } catch (err) {
@@ -54,7 +63,7 @@ export function useTailor(): UseTailorReturn {
   }, [])
 
   const generatePDF = useCallback(async () => {
-    const approved = buildApprovedSections(diffs, approvals, tailoredSkills)
+    const approved = buildApprovedSections(diffs, approvals, tailoredSkills, originalSkills)
     const res = await fetch('/api/preview', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -66,13 +75,14 @@ export function useTailor(): UseTailorReturn {
     const url = URL.createObjectURL(blob)
     window.open(url, '_blank')
     setTimeout(() => URL.revokeObjectURL(url), 60_000)
-  }, [diffs, approvals, tailoredSkills])
+  }, [diffs, approvals, tailoredSkills, originalSkills])
 
   const reset = useCallback(() => {
     setState('idle')
     setDiffs([])
     setApprovals({})
     setTailoredSkills({})
+    setOriginalSkills({})
     setError(null)
   }, [])
 
@@ -83,6 +93,7 @@ function buildApprovedSections(
   diffs: DiffResult[],
   approvals: Record<string, boolean>,
   tailoredSkills: Record<string, string[]>,
+  originalSkills: Record<string, string[]>,
 ): ApprovedSections {
   const sections: ApprovedSections = { bullets: {} }
 
@@ -97,7 +108,7 @@ function buildApprovedSections(
       const cat = diff.section_id.slice('skills_'.length)
       sections.skills[cat] = useNew
         ? (tailoredSkills[cat] ?? text.split(', '))
-        : text.split(', ')
+        : (originalSkills[cat] ?? text.split(', '))
     } else {
       sections.bullets![diff.section_id] = text
     }
