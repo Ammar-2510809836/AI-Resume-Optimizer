@@ -1,13 +1,14 @@
-# Resume Tailor
+# AI-Resume-Optimizer
 
-> Paste a job description → LLaMA 3.3 70B rewrites your resume → review diffs section-by-section → print to PDF.
+AI-Resume-Optimizer is a lightweight, web-based tool designed to automate the painful process of customizing CVs for different job applications. By evaluating the target job description against your master resume, the tool uses LLM intelligence to build an optimized, high-impact version of your qualifications.
 
-## What It Does
+## Key Features
 
-- **AI tailoring** — Groq LLaMA 3.3 70B rewrites your summary, skills, and bullet points to match the job
-- **Diff review** — approve or reject each section change before generating
-- **Zero-dependency PDF** — opens tailored resume in a new tab → Ctrl+P → Save as PDF
-- **Vercel hosted** — free tier deployment
+* 🎯 **Dynamic Taglines & Summaries**: Automatically rewrites your profile tagline and summary to align with the core focus of the job posting.
+* 🛠️ **Project Selection Dashboard**: Select or drop specific portfolio projects on-the-fly to keep the resume concise and relevant.
+* ⚡ **Natural Language AI Refinement**: Provide direct instructions to the LLM (e.g., "highlight Kubernetes experience" or "remove the AWS certification from the layout") to iterate on the results.
+* 🔍 **Interactive Diff Viewer**: A clean visual split-view to review, compare, and approve/reject every modification before generating the final copy.
+* 📄 **Multi-Template PDF Generator**: Instantly export print-ready PDFs using tailored design stylesheets (Modern Blue, Minimalist Serif, or Tech Bold).
 
 ## Stack
 
