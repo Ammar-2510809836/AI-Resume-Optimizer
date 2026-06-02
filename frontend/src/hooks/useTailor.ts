@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import type { DiffResult, ApprovedSections, AppState, TailorResponse } from '../types'
 
 interface UseTailorReturn {
@@ -8,11 +8,17 @@ interface UseTailorReturn {
   tailoredSkills: Record<string, string[]>
   extractedKeywords: string[]
   error: string | null
-  submitJD: (jd: string) => Promise<void>
+  templateId: string
+  jobDescription: string
+  excludedProjects: string[]
+  projects: { title: string; project_slug: string }[]
+  setTemplateId: (tplId: string) => void
+  submitJD: (jd: string, instructions?: string) => Promise<void>
   toggleApproval: (sectionId: string) => void
   approveAll: () => void
   generatePDF: () => Promise<void>
   reset: () => void
+  toggleProjectSelection: (slug: string) => void
 }
 
 export function useTailor(): UseTailorReturn {
@@ -23,15 +29,42 @@ export function useTailor(): UseTailorReturn {
   const [originalSkills, setOriginalSkills] = useState<Record<string, string[]>>({})
   const [extractedKeywords, setExtractedKeywords] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [templateId, setTemplateId] = useState<string>('modern')
+  const [jobDescription, setJobDescription] = useState<string>('')
+  const [excludedProjects, setExcludedProjects] = useState<string[]>([])
+  const [projects, setProjects] = useState<{ title: string; project_slug: string }[]>([])
 
-  const submitJD = useCallback(async (jd: string) => {
+  useEffect(() => {
+    fetch('/api/resume')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.projects) {
+          setProjects(data.projects.map((p: any) => ({ title: p.title, project_slug: p.project_slug })))
+        }
+      })
+      .catch(err => console.error("Failed to fetch resume projects:", err))
+  }, [])
+
+  const toggleProjectSelection = useCallback((projectSlug: string) => {
+    setExcludedProjects(prev =>
+      prev.includes(projectSlug)
+        ? prev.filter(p => p !== projectSlug)
+        : [...prev, projectSlug]
+    )
+  }, [])
+
+  const submitJD = useCallback(async (jd: string, instructions?: string) => {
+    setJobDescription(jd)
     setState('loading')
     setError(null)
     try {
       const res = await fetch('/api/tailor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ job_description: jd }),
+        body: JSON.stringify({
+          job_description: jd,
+          user_instructions: instructions || undefined
+        }),
       })
       if (!res.ok) {
         const detail = await res.json().catch(() => ({ detail: res.statusText }))
@@ -109,11 +142,14 @@ export function useTailor(): UseTailorReturn {
     }
 
     try {
-      const approved = buildApprovedSections(diffs, approvals, tailoredSkills, originalSkills)
+      const approved = buildApprovedSections(diffs, approvals, tailoredSkills, originalSkills, excludedProjects)
       const res = await fetch('/api/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ approved_sections: approved }),
+        body: JSON.stringify({
+          approved_sections: approved,
+          template_id: templateId
+        }),
       })
       if (!res.ok) throw new Error('Preview generation failed')
       const html = await res.text()
@@ -148,7 +184,7 @@ export function useTailor(): UseTailorReturn {
         setError(`Failed to generate resume: ${err instanceof Error ? err.message : 'Unknown error'}`)
       }
     }
-  }, [diffs, approvals, tailoredSkills, originalSkills])
+  }, [diffs, approvals, tailoredSkills, originalSkills, excludedProjects, templateId])
 
   const reset = useCallback(() => {
     setState('idle')
@@ -158,9 +194,17 @@ export function useTailor(): UseTailorReturn {
     setOriginalSkills({})
     setExtractedKeywords([])
     setError(null)
+    setJobDescription('')
+    setExcludedProjects([])
+    setTemplateId('modern')
   }, [])
 
-  return { state, diffs, approvals, tailoredSkills, extractedKeywords, error, submitJD, toggleApproval, approveAll, generatePDF, reset }
+  return {
+    state, diffs, approvals, tailoredSkills, extractedKeywords, error,
+    templateId, jobDescription, excludedProjects, projects,
+    setTemplateId, submitJD, toggleApproval, approveAll, generatePDF, reset,
+    toggleProjectSelection
+  }
 }
 
 function buildApprovedSections(
@@ -168,8 +212,10 @@ function buildApprovedSections(
   approvals: Record<string, boolean>,
   tailoredSkills: Record<string, string[]>,
   originalSkills: Record<string, string[]>,
+  excludedProjects: string[],
 ): ApprovedSections {
   const sections: ApprovedSections = { bullets: {} }
+  sections.excluded_projects = excludedProjects
 
   for (const diff of diffs) {
     const useNew = approvals[diff.section_id] ?? true
@@ -177,6 +223,8 @@ function buildApprovedSections(
 
     if (diff.section_id === 'summary') {
       sections.summary = text
+    } else if (diff.section_id === 'tagline') {
+      sections.tagline = text
     } else if (diff.section_id.startsWith('skills_')) {
       if (!sections.skills) sections.skills = {}
       const cat = diff.section_id.slice('skills_'.length)

@@ -5,6 +5,7 @@ from core.master_resume import MasterResume
 
 GOOD_JSON = json.dumps({
     "extracted_keywords": ["Python", "RAG", "FastAPI"],
+    "tagline": "Tailored tagline.",
     "summary": "Tailored summary for this role.",
     "skills": {"AI & LLM Engineering": ["RAG", "LLM Orchestration"]},
     "bullets": {"fhk_0": "Rephrased FH Kufstein bullet.", "techbit_0": "Rephrased TechBit bullet."},
@@ -21,6 +22,7 @@ def test_tailor_returns_tailored_sections(mock_groq_cls):
     result = client.tailor("We need a Python LLM developer.", MasterResume.load())
     assert isinstance(result, TailoredSections)
     assert result.summary == "Tailored summary for this role."
+    assert result.tagline == "Tailored tagline."
     assert "AI & LLM Engineering" in result.skills
     assert "fhk_0" in result.bullets
     assert result.extracted_keywords == ["Python", "RAG", "FastAPI"]

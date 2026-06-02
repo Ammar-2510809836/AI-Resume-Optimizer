@@ -21,8 +21,10 @@ export interface TailorResponse {
 
 export interface ApprovedSections {
   summary?: string
+  tagline?: string
   skills?: Record<string, string[]>
   bullets?: Record<string, string>
+  excluded_projects?: string[]
 }
 
 export type AppState = 'idle' | 'loading' | 'reviewing'

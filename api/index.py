@@ -32,10 +32,18 @@ _resume_engine = ResumeEngine(_template_path)
 
 class TailorRequest(BaseModel):
     job_description: str
+    user_instructions: str | None = None
 
 
 class PreviewRequest(BaseModel):
     approved_sections: dict
+    template_id: str | None = "modern"
+
+
+@app.get("/api/resume")
+async def get_master_resume():
+    from dataclasses import asdict
+    return asdict(_master)
 
 
 @app.post("/api/tailor")
@@ -46,13 +54,14 @@ async def tailor_resume(body: TailorRequest):
 
     try:
         client = LLMClient(api_key=api_key)
-        tailored = client.tailor(body.job_description, _master)
+        tailored = client.tailor(body.job_description, _master, body.user_instructions)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
     jd_keywords = {k.lower() for k in tailored.extracted_keywords}
 
     pairs: list[tuple[str, str, str]] = [
+        ("tagline", _master.tagline, tailored.tagline),
         ("summary", _master.summary, tailored.summary)
     ]
     for cat, orig_skills in _master.skills.items():
@@ -87,5 +96,5 @@ async def tailor_resume(body: TailorRequest):
 
 @app.post("/api/preview", response_class=HTMLResponse)
 async def preview_resume(body: PreviewRequest):
-    html = _resume_engine.inject(body.approved_sections)
+    html = _resume_engine.inject(body.approved_sections, template_id=body.template_id or "modern")
     return HTMLResponse(content=html)

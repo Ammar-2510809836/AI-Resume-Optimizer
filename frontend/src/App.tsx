@@ -3,11 +3,17 @@ import { JobInput } from './components/JobInput'
 import { DiffViewer } from './components/DiffViewer'
 import { LoadingState } from './components/LoadingState'
 
+import { useState } from 'react'
+
 export default function App() {
   const {
     state, diffs, approvals, extractedKeywords, error,
-    submitJD, toggleApproval, approveAll, generatePDF, reset,
+    templateId, jobDescription, excludedProjects, projects,
+    setTemplateId, submitJD, toggleApproval, approveAll, generatePDF, reset,
+    toggleProjectSelection
   } = useTailor()
+
+  const [refinementPrompt, setRefinementPrompt] = useState('')
 
   return (
     <div className="min-h-screen bg-[#f4f7f6] p-4 md:p-6">
@@ -59,7 +65,21 @@ export default function App() {
             {state === 'reviewing' && (
               <div className="flex flex-col gap-3 h-full">
                 <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-                  <h2 className="font-bold text-[#2c3e50]">Section Review</h2>
+                  <div className="flex flex-col gap-1">
+                    <h2 className="font-bold text-[#2c3e50]">Section Review</h2>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Style:</label>
+                      <select
+                        value={templateId}
+                        onChange={(e) => setTemplateId(e.target.value)}
+                        className="p-1 border border-gray-200 rounded text-[10px] font-bold text-[#0F4C81] outline-none cursor-pointer"
+                      >
+                        <option value="modern">Modern Blue (Default)</option>
+                        <option value="minimalist">Minimalist Serif</option>
+                        <option value="tech">Tech Bold</option>
+                      </select>
+                    </div>
+                  </div>
                   <button
                     onClick={generatePDF}
                     className="px-5 py-2 bg-[#0F4C81] text-white rounded-lg text-sm font-semibold
@@ -71,6 +91,35 @@ export default function App() {
                 <p className="text-[11px] text-gray-400">
                   Opens in new tab → Ctrl+P → Save as PDF
                 </p>
+
+                {/* AI Refinement Feedback Box */}
+                <div className="bg-[#f0f4f8] rounded-xl p-3 border border-blue-100">
+                  <p className="font-semibold text-[10px] text-[#0F4C81] uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <span>⚡ Refine with AI Instruction</span>
+                    <span className="text-[9px] text-gray-400 lowercase font-normal">(tell the LLM what to include, remove, or modify)</span>
+                  </p>
+                  <div className="flex gap-2">
+                    <textarea
+                      placeholder="e.g., 'Make the dairy sentinel project sound more senior', 'Ensure FastAPI is prominent', 'Remove AWS Certified Developer Associate from certifications'"
+                      value={refinementPrompt}
+                      onChange={(e) => setRefinementPrompt(e.target.value)}
+                      className="flex-1 p-2 bg-white border border-gray-200 rounded-lg text-xs focus:ring-1 focus:ring-[#0F4C81] outline-none leading-relaxed resize-none h-12"
+                    />
+                    <button
+                      onClick={() => {
+                        if (refinementPrompt.trim()) {
+                          submitJD(jobDescription, refinementPrompt.trim())
+                          setRefinementPrompt('')
+                        }
+                      }}
+                      disabled={!refinementPrompt.trim()}
+                      className="px-4 py-2 bg-[#0F4C81] text-white rounded-lg text-xs font-semibold hover:bg-[#0b3a61] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Refine
+                    </button>
+                  </div>
+                </div>
+
                 <div className="overflow-y-auto flex-1 pr-1">
                   <DiffViewer
                     diffs={diffs}
@@ -78,6 +127,9 @@ export default function App() {
                     extractedKeywords={extractedKeywords}
                     onToggle={toggleApproval}
                     onApproveAll={approveAll}
+                    projects={projects}
+                    excludedProjects={excludedProjects}
+                    onToggleProject={toggleProjectSelection}
                   />
                 </div>
               </div>
