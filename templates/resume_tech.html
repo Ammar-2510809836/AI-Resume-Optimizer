@@ -15,38 +15,38 @@
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.5;
+            line-height: 1.45;
             color: var(--text-color);
             background: #f3f4f6;
             margin: 0;
-            padding: 25px;
+            padding: 20px;
         }
         .resume-container {
             max-width: 800px;
             margin: 0 auto;
             background: var(--bg-color);
-            padding: 45px 55px;
+            padding: 35px 45px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
             border-top: 5px solid var(--secondary-color);
         }
         header {
             text-align: left;
-            padding-bottom: 18px;
-            margin-bottom: 22px;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
             border-bottom: 2px solid var(--line-color);
         }
         h1 { 
-            font-size: 32px; 
+            font-size: 28px; 
             margin: 0 0 4px 0; 
             color: var(--primary-color); 
             font-weight: 800;
             letter-spacing: -0.5px;
         }
         .tagline { 
-            font-size: 14px; 
+            font-size: 13.5px; 
             color: var(--secondary-color); 
             font-weight: 600;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -54,44 +54,49 @@
             display: flex; 
             flex-wrap: wrap; 
             gap: 12px; 
-            font-size: 12px; 
+            font-size: 11.5px; 
             color: var(--text-light); 
             align-items: center; 
         }
         .contact-info a { color: var(--text-light); text-decoration: none; border-bottom: 1px dotted var(--line-color); }
         .contact-info a:hover { color: var(--secondary-color); border-bottom-color: var(--secondary-color); }
         
+        section { margin-bottom: 16px; page-break-inside: avoid; break-inside: avoid; }
         h2 { 
-            font-size: 14px; 
+            font-size: 13.5px; 
             color: var(--secondary-color); 
             background: #f3f4f6;
             padding: 4px 8px;
             border-radius: 4px;
-            margin-top: 25px; 
-            margin-bottom: 12px; 
+            margin-top: 18px; 
+            margin-bottom: 10px; 
             text-transform: uppercase; 
             letter-spacing: 1px; 
             font-weight: 800;
+            page-break-after: avoid;
+            break-after: avoid;
         }
-        h3 { font-size: 13.5px; color: var(--primary-color); margin: 0 0 2px 0; font-weight: 700; }
-        .entry { margin-bottom: 18px; page-break-inside: avoid; }
+        h3 { font-size: 13px; color: var(--primary-color); margin: 0 0 2px 0; font-weight: 700; }
+        .entry { margin-bottom: 14px; page-break-inside: avoid; break-inside: avoid; }
         .entry-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px; }
         .company-name { font-weight: 600; color: var(--text-light); font-size: 12.5px; }
         .date-location { font-size: 11.5px; color: var(--text-light); font-weight: 500; text-align: right; }
-        ul { margin: 6px 0 0 0; padding-left: 18px; }
-        li { font-size: 12.5px; margin-bottom: 4px; text-align: justify; }
-        .skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 12.5px; }
-        .skill-group { margin-bottom: 10px; }
-        .skill-group strong { display: block; color: var(--primary-color); margin-bottom: 2px; font-weight: 700; }
-        .project-tech { font-size: 11.5px; color: var(--secondary-color); font-weight: 600; margin-bottom: 4px; }
-        p { font-size: 12.5px; line-height: 1.5; margin: 0 0 10px 0; text-align: justify; }
+        ul { margin: 4px 0 0 0; padding-left: 16px; }
+        li { font-size: 12px; margin-bottom: 3.5px; text-align: justify; }
+        .skills-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 24px; font-size: 12px; }
+        .skill-group { margin-bottom: 4px; page-break-inside: avoid; break-inside: avoid; }
+        .skill-group strong { color: var(--primary-color); margin-right: 4px; font-weight: 700; }
+        .project-tech { font-size: 11px; color: var(--secondary-color); font-weight: 600; margin-bottom: 3px; }
+        p { font-size: 12px; line-height: 1.45; margin: 0 0 8px 0; text-align: justify; }
         .ats-link { color: var(--secondary-color); text-decoration: none; font-weight: 600; }
         .ats-link:hover { text-decoration: underline; }
+        .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; page-break-inside: avoid; break-inside: avoid; }
         @media print {
             body { background: white; padding: 0; }
             .resume-container { box-shadow: none; border-top: none; padding: 0; max-width: 100%; }
-            h2 { background: #f3f4f6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            @page { margin: 12mm; }
+            h2 { background: #f3f4f6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; page-break-after: avoid; break-after: avoid; }
+            @page { size: A4 portrait; margin: 10mm 12mm; }
+            .entry, .skill-group, section, .bottom-grid { page-break-inside: avoid; break-inside: avoid; }
         }
     </style>
 </head>
@@ -124,23 +129,12 @@
         <section>
             <h2>Skills</h2>
             <div class="skills-grid">
-                {% set skill_items = skills.items() | list %}
-                <div>
-                    {% for cat, skill_list in skill_items[:3] %}
-                    <div class="skill-group">
-                        <strong>{{ cat }}</strong>
-                        {{ skill_list | join(', ') }}
-                    </div>
-                    {% endfor %}
+                {% for cat, skill_list in skills.items() %}
+                <div class="skill-group">
+                    <strong>{{ cat }}:</strong>
+                    {{ skill_list | join(', ') }}
                 </div>
-                <div>
-                    {% for cat, skill_list in skill_items[3:] %}
-                    <div class="skill-group">
-                        <strong>{{ cat }}</strong>
-                        {{ skill_list | join(', ') }}
-                    </div>
-                    {% endfor %}
-                </div>
+                {% endfor %}
             </div>
         </section>
         {% endif %}
@@ -202,16 +196,16 @@
 
         {% if certifications or languages %}
         <section>
-            <div class="skills-grid">
+            <div class="bottom-grid">
                 {% if certifications %}
                 <div>
                     <h2>Certifications</h2>
-                    <ul style="list-style-type: none; padding-left: 0;">
+                    <ul style="list-style-type: none; padding-left: 0; margin-top: 4px;">
                         {% for cert in certifications %}
-                        <li style="margin-bottom: 8px;">
+                        <li style="margin-bottom: 6px;">
                             <strong>{{ cert.name }}</strong><br>
                             {% if cert.url %}
-                            <a href="{{ cert.url }}" target="_blank" class="ats-link" style="font-size: 11.5px;">Verify Credential ↗</a>
+                            <a href="{{ cert.url }}" target="_blank" class="ats-link" style="font-size: 11px;">Verify Credential ↗</a>
                             {% endif %}
                         </li>
                         {% endfor %}
@@ -221,9 +215,9 @@
                 {% if languages %}
                 <div>
                     <h2>Languages</h2>
-                    <ul style="list-style-type: none; padding-left: 0;">
+                    <ul style="list-style-type: none; padding-left: 0; margin-top: 4px;">
                         {% for lang in languages %}
-                        <li><strong>{{ lang.language }}:</strong> {{ lang.level }}</li>
+                        <li style="margin-bottom: 4px;"><strong>{{ lang.language }}:</strong> {{ lang.level }}</li>
                         {% endfor %}
                     </ul>
                 </div>
