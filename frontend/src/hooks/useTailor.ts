@@ -75,10 +75,20 @@ export function useTailor(): UseTailorReturn {
 
   const updateManualEdit = useCallback((sectionId: string, value: string) => {
     setManualEdits(prev => ({ ...prev, [sectionId]: value }))
+    if (sectionId.startsWith('skills_')) {
+      const cat = sectionId.slice('skills_'.length)
+      const list = value.split(',').map(s => s.trim()).filter(Boolean)
+      setEditableSkills(prev => ({ ...prev, [cat]: list }))
+    }
   }, [])
 
   const updateSkills = useCallback((newSkills: Record<string, string[]>) => {
     setEditableSkills(newSkills)
+    const newManuals: Record<string, string> = {}
+    Object.entries(newSkills).forEach(([cat, list]) => {
+      newManuals[`skills_${cat}`] = list.join(', ')
+    })
+    setManualEdits(prev => ({ ...prev, ...newManuals }))
   }, [])
 
   const addCustomProject = useCallback((project: SuggestedProject) => {
@@ -151,8 +161,23 @@ export function useTailor(): UseTailorReturn {
   }, [])
 
   const toggleApproval = useCallback((sectionId: string) => {
-    setApprovals(prev => ({ ...prev, [sectionId]: !prev[sectionId] }))
-  }, [])
+    setApprovals(prev => {
+      const nextApproved = !prev[sectionId]
+      if (sectionId.startsWith('skills_')) {
+        const cat = sectionId.slice('skills_'.length)
+        if (nextApproved) {
+          if (tailoredSkills[cat]) {
+            setEditableSkills(es => ({ ...es, [cat]: tailoredSkills[cat] }))
+          }
+        } else {
+          if (originalSkills[cat]) {
+            setEditableSkills(es => ({ ...es, [cat]: originalSkills[cat] }))
+          }
+        }
+      }
+      return { ...prev, [sectionId]: nextApproved }
+    })
+  }, [tailoredSkills, originalSkills])
 
   const approveAll = useCallback(() => {
     setApprovals(prev => Object.fromEntries(Object.keys(prev).map(k => [k, true])))

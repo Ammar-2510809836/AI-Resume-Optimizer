@@ -66,8 +66,8 @@ async def tailor_resume(body: TailorRequest):
         ("tagline", _master.tagline, tailored.tagline),
         ("summary", _master.summary, tailored.summary)
     ]
-    for cat, orig_skills in _master.skills.items():
-        tail_skills = tailored.skills.get(cat, orig_skills)
+    for cat, tail_skills in tailored.skills.items():
+        orig_skills = _master.skills.get(cat, [])
         pairs.append((f"skills_{cat}", ", ".join(orig_skills), ", ".join(tail_skills)))
     for exp in _master.experience:
         for i, orig in enumerate(exp.bullets):
