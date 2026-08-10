@@ -209,15 +209,37 @@ export function useTailor(): UseTailorReturn {
         const detail = await res.json().catch(() => ({ detail: res.statusText }))
         throw new Error(detail.detail ?? 'PDF generation failed')
       }
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'Ammar_Khalid_Tailored_Resume.pdf'
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      setTimeout(() => URL.revokeObjectURL(url), 60_000)
+      
+      const contentType = res.headers.get('content-type') || ''
+      const isFallback = res.headers.get('X-PDF-Fallback') === 'true' || contentType.includes('text/html')
+
+      if (isFallback) {
+        const html = await res.text()
+        const win = window.open('', '_blank')
+        if (win) {
+          win.document.write(html)
+          win.document.close()
+        } else {
+          const blob = new Blob([html], { type: 'text/html' })
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = 'Ammar_Khalid_Tailored_Resume.html'
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+        }
+      } else {
+        const blob = await res.blob()
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'Ammar_Khalid_Tailored_Resume.pdf'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        setTimeout(() => URL.revokeObjectURL(url), 60_000)
+      }
     } catch (err) {
       setError(`Failed to generate PDF: ${err instanceof Error ? err.message : 'Unknown error'}`)
     } finally {
