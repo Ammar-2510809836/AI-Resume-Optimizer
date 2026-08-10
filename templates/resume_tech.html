@@ -120,41 +120,6 @@
         </section>
         {% endif %}
 
-        {% if experience %}
-        <section>
-            <h2>Experience</h2>
-            {% for exp in experience %}
-            <div class="entry">
-                <div class="entry-header">
-                    <h3>{{ exp.title }}</h3>
-                    <span class="date-location">{{ exp.date }} | {{ exp.location }}</span>
-                </div>
-                <div class="company-name">{{ exp.company }}</div>
-                <ul>
-                    {% for bullet in exp.bullets %}
-                    <li>{{ bullet | safe }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-            {% endfor %}
-        </section>
-        {% endif %}
-
-        {% if education %}
-        <section>
-            <h2>Education</h2>
-            {% for edu in education %}
-            <div class="entry">
-                <div class="entry-header">
-                    <h3>{{ edu.degree }}</h3>
-                    <span class="date-location">{{ edu.date }}</span>
-                </div>
-                <div class="company-name">{{ edu.school }} | {{ edu.location }}</div>
-            </div>
-            {% endfor %}
-        </section>
-        {% endif %}
-
         {% if skills %}
         <section>
             <h2>Skills</h2>
@@ -180,6 +145,26 @@
         </section>
         {% endif %}
 
+        {% if experience %}
+        <section>
+            <h2>Experience</h2>
+            {% for exp in experience %}
+            <div class="entry">
+                <div class="entry-header">
+                    <h3>{{ exp.title }}</h3>
+                    <span class="date-location">{{ exp.date }} | {{ exp.location }}</span>
+                </div>
+                <div class="company-name">{{ exp.company }}</div>
+                <ul>
+                    {% for bullet in exp.bullets %}
+                    <li>{{ bullet | safe }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endfor %}
+        </section>
+        {% endif %}
+
         {% if projects %}
         <section>
             <h2>Projects</h2>
@@ -195,6 +180,21 @@
                     <li>{{ bullet | safe }}</li>
                     {% endfor %}
                 </ul>
+            </div>
+            {% endfor %}
+        </section>
+        {% endif %}
+
+        {% if education %}
+        <section>
+            <h2>Education</h2>
+            {% for edu in education %}
+            <div class="entry">
+                <div class="entry-header">
+                    <h3>{{ edu.degree }}</h3>
+                    <span class="date-location">{{ edu.date }}</span>
+                </div>
+                <div class="company-name">{{ edu.school }} | {{ edu.location }}</div>
             </div>
             {% endfor %}
         </section>

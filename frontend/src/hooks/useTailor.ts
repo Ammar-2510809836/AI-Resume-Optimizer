@@ -1,21 +1,33 @@
 import { useState, useCallback, useEffect } from 'react'
-import type { DiffResult, ApprovedSections, AppState, TailorResponse } from '../types'
+import type { DiffResult, ApprovedSections, AppState, TailorResponse, ProjectRelevance, SuggestedProject } from '../types'
 
 interface UseTailorReturn {
   state: AppState
   diffs: DiffResult[]
   approvals: Record<string, boolean>
   tailoredSkills: Record<string, string[]>
+  editableSkills: Record<string, string[]>
   extractedKeywords: string[]
+  projectRelevance: Record<string, ProjectRelevance>
+  suggestedProjects: SuggestedProject[]
+  customProjects: SuggestedProject[]
+  manualEdits: Record<string, string>
   error: string | null
   templateId: string
   jobDescription: string
   excludedProjects: string[]
   projects: { title: string; project_slug: string }[]
+  previewHtml: string | null
+  isExportingPdf: boolean
   setTemplateId: (tplId: string) => void
   submitJD: (jd: string, instructions?: string) => Promise<void>
   toggleApproval: (sectionId: string) => void
   approveAll: () => void
+  updateManualEdit: (sectionId: string, value: string) => void
+  updateSkills: (newSkills: Record<string, string[]>) => void
+  addCustomProject: (project: SuggestedProject) => void
+  addCustomBullet: (roleOrProjectSlug: string, bulletText: string) => void
+  fetchPreviewHtml: () => Promise<string>
   generatePDF: () => Promise<void>
   reset: () => void
   toggleProjectSelection: (slug: string) => void
@@ -26,13 +38,20 @@ export function useTailor(): UseTailorReturn {
   const [diffs, setDiffs] = useState<DiffResult[]>([])
   const [approvals, setApprovals] = useState<Record<string, boolean>>({})
   const [tailoredSkills, setTailoredSkills] = useState<Record<string, string[]>>({})
+  const [editableSkills, setEditableSkills] = useState<Record<string, string[]>>({})
   const [originalSkills, setOriginalSkills] = useState<Record<string, string[]>>({})
   const [extractedKeywords, setExtractedKeywords] = useState<string[]>([])
+  const [projectRelevance, setProjectRelevance] = useState<Record<string, ProjectRelevance>>({})
+  const [suggestedProjects, setSuggestedProjects] = useState<SuggestedProject[]>([])
+  const [customProjects, setCustomProjects] = useState<SuggestedProject[]>([])
+  const [manualEdits, setManualEdits] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [templateId, setTemplateId] = useState<string>('modern')
   const [jobDescription, setJobDescription] = useState<string>('')
   const [excludedProjects, setExcludedProjects] = useState<string[]>([])
   const [projects, setProjects] = useState<{ title: string; project_slug: string }[]>([])
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null)
+  const [isExportingPdf, setIsExportingPdf] = useState<boolean>(false)
 
   useEffect(() => {
     fetch('/api/resume')
@@ -40,6 +59,7 @@ export function useTailor(): UseTailorReturn {
       .then(data => {
         if (data && data.projects) {
           setProjects(data.projects.map((p: any) => ({ title: p.title, project_slug: p.project_slug })))
+          setEditableSkills(data.skills ?? {})
         }
       })
       .catch(err => console.error("Failed to fetch resume projects:", err))
@@ -53,10 +73,33 @@ export function useTailor(): UseTailorReturn {
     )
   }, [])
 
+  const updateManualEdit = useCallback((sectionId: string, value: string) => {
+    setManualEdits(prev => ({ ...prev, [sectionId]: value }))
+  }, [])
+
+  const updateSkills = useCallback((newSkills: Record<string, string[]>) => {
+    setEditableSkills(newSkills)
+  }, [])
+
+  const addCustomProject = useCallback((project: SuggestedProject) => {
+    setCustomProjects(prev => [...prev, project])
+  }, [])
+
+  const addCustomBullet = useCallback((roleOrProjectSlug: string, bulletText: string) => {
+    setManualEdits(prev => {
+      let idx = 0
+      while (`${roleOrProjectSlug}_custom_${idx}` in prev) {
+        idx++
+      }
+      return { ...prev, [`${roleOrProjectSlug}_custom_${idx}`]: bulletText }
+    })
+  }, [])
+
   const submitJD = useCallback(async (jd: string, instructions?: string) => {
     setJobDescription(jd)
     setState('loading')
     setError(null)
+    setManualEdits({})
     try {
       const res = await fetch('/api/tailor', {
         method: 'POST',
@@ -73,7 +116,24 @@ export function useTailor(): UseTailorReturn {
       const data: TailorResponse = await res.json()
       setDiffs(data.diffs)
       setTailoredSkills(data.tailored_skills)
+      setEditableSkills(data.tailored_skills)
       setExtractedKeywords(data.extracted_keywords ?? [])
+      setProjectRelevance(data.project_relevance ?? {})
+      
+      const suggested = (data.suggested_new_projects ?? []).map(p => ({ ...p, is_ai_generated: true }))
+      setSuggestedProjects(suggested)
+
+      // Auto-exclude low relevance projects if score < 50
+      if (data.project_relevance) {
+        const toExclude: string[] = []
+        Object.entries(data.project_relevance).forEach(([slug, rel]) => {
+          if (rel.score < 50) {
+            toExclude.push(slug)
+          }
+        })
+        setExcludedProjects(toExclude)
+      }
+
       const origSkills: Record<string, string[]> = {}
       data.diffs.forEach(d => {
         if (d.section_id.startsWith('skills_')) {
@@ -98,51 +158,21 @@ export function useTailor(): UseTailorReturn {
     setApprovals(prev => Object.fromEntries(Object.keys(prev).map(k => [k, true])))
   }, [])
 
-  const generatePDF = useCallback(async () => {
-    // Open a blank new tab immediately on click to bypass the browser's popup blocker
-    let pdfWindow = window.open('', '_blank')
-    if (pdfWindow) {
-      pdfWindow.document.write(`
-        <html>
-          <head>
-            <title>Generating PDF...</title>
-            <style>
-              body {
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                height: 100vh;
-                margin: 0;
-                background: #f4f7f6;
-                color: #2c3e50;
-                text-align: center;
-              }
-              .spinner {
-                border: 4px solid rgba(0,0,0,0.1);
-                width: 36px;
-                height: 36px;
-                border-radius: 50%;
-                border-left-color: #0F4C81;
-                animation: spin 1s linear infinite;
-                margin-bottom: 16px;
-              }
-              @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-            </style>
-          </head>
-          <body>
-            <div class="spinner"></div>
-            <h2>Generating your tailored resume...</h2>
-            <p style="color: #7f8c8d; font-size: 14px;">This will open the print preview shortly.</p>
-          </body>
-        </html>
-      `)
-      pdfWindow.document.close()
-    }
+  const getApprovedSections = useCallback(() => {
+    return buildApprovedSections(
+      diffs,
+      approvals,
+      editableSkills,
+      originalSkills,
+      excludedProjects,
+      manualEdits,
+      [...suggestedProjects, ...customProjects]
+    )
+  }, [diffs, approvals, editableSkills, originalSkills, excludedProjects, manualEdits, suggestedProjects, customProjects])
 
+  const fetchPreviewHtml = useCallback(async (): Promise<string> => {
     try {
-      const approved = buildApprovedSections(diffs, approvals, tailoredSkills, originalSkills, excludedProjects)
+      const approved = getApprovedSections()
       const res = await fetch('/api/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -151,58 +181,75 @@ export function useTailor(): UseTailorReturn {
           template_id: templateId
         }),
       })
-      if (!res.ok) throw new Error('Preview generation failed')
+      if (!res.ok) throw new Error('Preview fetch failed')
       const html = await res.text()
-      const blob = new Blob([html], { type: 'text/html' })
-      const url = URL.createObjectURL(blob)
-      
-      if (pdfWindow && !pdfWindow.closed) {
-        pdfWindow.location.href = url
-        setTimeout(() => URL.revokeObjectURL(url), 60_000)
-      } else {
-        // Fallback: If new tab was blocked by browser's popup blocker, trigger a direct file download
-        const a = document.createElement('a')
-        a.href = url
-        a.download = 'Ammar_Khalid_Tailored_Resume.html'
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        setTimeout(() => URL.revokeObjectURL(url), 60_000)
-      }
+      setPreviewHtml(html)
+      return html
     } catch (err) {
-      if (pdfWindow && !pdfWindow.closed) {
-        pdfWindow.document.write(`
-          <html>
-            <body style="font-family: sans-serif; padding: 20px; color: #c0392b;">
-              <h2>Error generating preview</h2>
-              <p>${err instanceof Error ? err.message : 'Unknown error'}</p>
-            </body>
-          </html>
-        `)
-        pdfWindow.document.close()
-      } else {
-        setError(`Failed to generate resume: ${err instanceof Error ? err.message : 'Unknown error'}`)
-      }
+      const msg = err instanceof Error ? err.message : 'Failed to load preview'
+      setError(msg)
+      return `<html><body><p style="color:red">${msg}</p></body></html>`
     }
-  }, [diffs, approvals, tailoredSkills, originalSkills, excludedProjects, templateId])
+  }, [getApprovedSections, templateId])
+
+  const generatePDF = useCallback(async () => {
+    setIsExportingPdf(true)
+    setError(null)
+    try {
+      const approved = getApprovedSections()
+      const res = await fetch('/api/export-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          approved_sections: approved,
+          template_id: templateId
+        }),
+      })
+      if (!res.ok) {
+        const detail = await res.json().catch(() => ({ detail: res.statusText }))
+        throw new Error(detail.detail ?? 'PDF generation failed')
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'Ammar_Khalid_Tailored_Resume.pdf'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(url), 60_000)
+    } catch (err) {
+      setError(`Failed to generate PDF: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    } finally {
+      setIsExportingPdf(false)
+    }
+  }, [getApprovedSections, templateId])
 
   const reset = useCallback(() => {
     setState('idle')
     setDiffs([])
     setApprovals({})
     setTailoredSkills({})
+    setEditableSkills({})
     setOriginalSkills({})
     setExtractedKeywords([])
+    setProjectRelevance({})
+    setSuggestedProjects([])
+    setCustomProjects([])
+    setManualEdits({})
     setError(null)
     setJobDescription('')
     setExcludedProjects([])
     setTemplateId('modern')
+    setPreviewHtml(null)
   }, [])
 
   return {
-    state, diffs, approvals, tailoredSkills, extractedKeywords, error,
-    templateId, jobDescription, excludedProjects, projects,
-    setTemplateId, submitJD, toggleApproval, approveAll, generatePDF, reset,
+    state, diffs, approvals, tailoredSkills, editableSkills, extractedKeywords,
+    projectRelevance, suggestedProjects, customProjects, manualEdits, error,
+    templateId, jobDescription, excludedProjects, projects, previewHtml, isExportingPdf,
+    setTemplateId, submitJD, toggleApproval, approveAll, updateManualEdit,
+    updateSkills, addCustomProject, addCustomBullet, fetchPreviewHtml, generatePDF, reset,
     toggleProjectSelection
   }
 }
@@ -210,30 +257,42 @@ export function useTailor(): UseTailorReturn {
 function buildApprovedSections(
   diffs: DiffResult[],
   approvals: Record<string, boolean>,
-  tailoredSkills: Record<string, string[]>,
+  editableSkills: Record<string, string[]>,
   originalSkills: Record<string, string[]>,
   excludedProjects: string[],
+  manualEdits: Record<string, string>,
+  allCustomProjects: SuggestedProject[]
 ): ApprovedSections {
-  const sections: ApprovedSections = { bullets: {} }
+  const sections: ApprovedSections = { bullets: {}, custom_projects: allCustomProjects }
   sections.excluded_projects = excludedProjects
+  sections.skills = editableSkills
 
   for (const diff of diffs) {
     const useNew = approvals[diff.section_id] ?? true
-    const text = useNew ? diff.tailored : diff.original
+    let text = useNew ? diff.tailored : diff.original
+
+    // Check if user provided manual edit override
+    if (manualEdits[diff.section_id] !== undefined) {
+      text = manualEdits[diff.section_id]
+    }
 
     if (diff.section_id === 'summary') {
       sections.summary = text
     } else if (diff.section_id === 'tagline') {
       sections.tagline = text
     } else if (diff.section_id.startsWith('skills_')) {
-      if (!sections.skills) sections.skills = {}
-      const cat = diff.section_id.slice('skills_'.length)
-      sections.skills[cat] = useNew
-        ? (tailoredSkills[cat] ?? text.split(', '))
-        : (originalSkills[cat] ?? text.split(', '))
+      // handled via sections.skills = editableSkills
     } else {
       sections.bullets![diff.section_id] = text
     }
   }
+
+  // Include user-added custom bullets (e.g. fhk_custom_0)
+  Object.entries(manualEdits).forEach(([key, val]) => {
+    if (key.includes('_custom_')) {
+      sections.bullets![key] = val
+    }
+  })
+
   return sections
 }

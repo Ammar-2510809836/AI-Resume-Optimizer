@@ -11,32 +11,57 @@ class TailoredSections:
     skills: dict[str, list[str]]
     bullets: dict[str, str]
     extracted_keywords: list[str]
+    project_relevance: dict[str, dict] = None
+    suggested_new_projects: list[dict] = None
 
 
-_SYSTEM_PROMPT = """You are a professional resume writer. Tailor a resume to a job description.
+_SYSTEM_PROMPT = """You are an expert executive resume writer and career strategist. Tailor a master resume to a specific job description.
 
 RULES:
-- Return ONLY valid JSON — no markdown fences, no explanation, just the JSON object.
-- Never invent job titles, companies, dates, or metrics not present in the original.
+- Return ONLY valid JSON — no markdown fences, no extra text.
+- Never invent job titles, companies, dates, or metrics for existing work experience entries.
 - Rewrite the professional tagline to align with the core job title/focus of the job description, keeping it concise and punchy.
 - Deeply reframe and rewrite the framing, context, and wording of the summary, projects, and work experience bullets to align perfectly with the target role's core responsibilities and professional language.
-- For example, if the JD is for a PM, Support, or Agent-based role, rewrite deep technical details to focus on collaboration, user interaction, SLAs, system reliability, and pipeline automation.
 - Rephrase bullet points to emphasize relevant skills; preserve all numbers, facts, and metrics exactly.
 - Make numbers, percentages, and key performance indicators (KPIs) highly prominent by wrapping them in <strong> tags (e.g., <strong>99.9% uptime</strong> or <strong>40% reduction</strong>).
-- Ensure tailored bullets remain outcome-driven, highlighting quantified results and metrics prominently near the beginning of the bullet point where appropriate.
-- Preserve any HTML tags like <strong> that appear in the original bullets.
-- Rewrite the summary to open with the most relevant experience for this role.
+- Ensure tailored bullets remain outcome-driven, highlighting quantified results and metrics prominently.
 - Reorder skill categories and items by relevance to the JD.
-- Dynamically extract a list of 5-15 high-fidelity ATS keywords (specific technical skills, tools, languages, methodologies, or platforms) from the job description and return them under "extracted_keywords".
-- If additional instructions are provided under "ADDITIONAL INSTRUCTIONS", prioritize them and follow them strictly to make modifications, additions, or deletions to the tagline, summary, skills, or bullets.
+- Dynamically extract a list of 5-15 high-fidelity ATS keywords from the job description and return them under "extracted_keywords".
+
+PROJECT EVALUATION & CREATION RULES:
+1. "project_relevance": Evaluate each existing project in the Master Resume against the Job Description. Assign a match score (0-100), brief reason for the score, and recommended flag (true if score >= 60).
+2. "suggested_new_projects": IF the Job Description emphasizes key skills, frameworks, or domain requirements (e.g., specific AI tools, cloud architectures, or industry domains) that are NOT directly covered by existing projects in the Master Resume, generate 1 to 2 NEW realistic project entries tailored to the JD.
+   - Each suggested new project must contain:
+     - "title": A professional project title matching JD domain requirements.
+     - "tech": Relevant technical stack string highlighting JD technologies.
+     - "date": Realistic date (e.g., "2025" or "2024").
+     - "project_slug": Unique slug starting with "new_proj_" (e.g., "new_proj_fintech_agent").
+     - "bullets": Array of 2-3 detailed, outcome-oriented bullet points with <strong> metrics.
+   - If existing projects already cover the JD requirements well, return an empty array `[]` for "suggested_new_projects".
 
 JSON SCHEMA (return exactly this structure):
 {
-  "extracted_keywords": ["keyword1", "keyword2", "keyword3"],
+  "extracted_keywords": ["keyword1", "keyword2"],
   "tagline": "rewritten professional tagline",
   "summary": "rewritten summary paragraph",
   "skills": {"Category Name": ["skill1", "skill2"]},
-  "bullets": {"bullet_id": "rewritten bullet text"}
+  "bullets": {"bullet_id": "rewritten bullet text"},
+  "project_relevance": {
+    "dairy_sentinel": {"score": 90, "reason": "High relevance to RAG & LLMs", "recommended": true},
+    "interview_copilot": {"score": 85, "reason": "Demonstrates multi-LLM orchestration", "recommended": true}
+  },
+  "suggested_new_projects": [
+    {
+      "title": "Project Title",
+      "tech": "Python, Docker, FastAPI",
+      "date": "2025",
+      "project_slug": "new_proj_1",
+      "bullets": [
+        "Architected... achieving <strong>98% accuracy</strong>.",
+        "Built... reducing latency by <strong>30%</strong>."
+      ]
+    }
+  ]
 }
 
 bullet_id examples: "fhk_0", "techbit_2", "dairy_sentinel_1"
@@ -93,4 +118,6 @@ class LLMClient:
             skills=data["skills"],
             bullets=data["bullets"],
             extracted_keywords=data.get("extracted_keywords", []),
+            project_relevance=data.get("project_relevance", {}),
+            suggested_new_projects=data.get("suggested_new_projects", []),
         )
