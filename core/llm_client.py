@@ -70,10 +70,12 @@ Use the IDs shown in [brackets] in the resume."""
 
 FALLBACK_MODELS = [
     "llama-3.3-70b-versatile",
-    "llama-3.3-70b-specdec",
+    "deepseek-r1-distill-llama-70b",
     "llama-3.1-70b-versatile",
+    "qwen-2.5-coder-32b",
+    "deepseek-r1-distill-qwen-32b",
     "llama3-70b-8192",
-    "qwen-2.5-72b-instruct",
+    "llama-3.1-8b-instant",
     "mixtral-8x7b-32768",
 ]
 
@@ -118,8 +120,11 @@ class LLMClient:
                 )
                 return response.choices[0].message.content
             except Exception as e:
-                err_str = str(e)
-                if "model_not_found" in err_str or "404" in err_str or "does not exist" in err_str:
+                err_str = str(e).lower()
+                if any(kw in err_str for kw in [
+                    "model_not_found", "model_decommissioned", "decommissioned",
+                    "not exist", "not supported", "404", "invalid_request_error"
+                ]):
                     last_error = e
                     continue
                 raise e
