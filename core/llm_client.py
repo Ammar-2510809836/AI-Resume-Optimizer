@@ -68,6 +68,16 @@ bullet_id examples: "fhk_0", "techbit_2", "dairy_sentinel_1"
 Use the IDs shown in [brackets] in the resume."""
 
 
+FALLBACK_MODELS = [
+    "llama-3.3-70b-versatile",
+    "llama-3.3-70b-specdec",
+    "llama-3.1-70b-versatile",
+    "llama3-70b-8192",
+    "qwen-2.5-72b-instruct",
+    "mixtral-8x7b-32768",
+]
+
+
 class LLMClient:
     def __init__(self, api_key: str, model: str = "llama-3.3-70b-versatile"):
         self._client = Groq(api_key=api_key)
@@ -93,16 +103,28 @@ class LLMClient:
         return prompt
 
     def _call_groq(self, user_prompt: str) -> str:
-        response = self._client.chat.completions.create(
-            model=self._model,
-            messages=[
-                {"role": "system", "content": _SYSTEM_PROMPT},
-                {"role": "user", "content": user_prompt},
-            ],
-            temperature=0.5,
-            max_tokens=4096,
-        )
-        return response.choices[0].message.content
+        models_to_try = [self._model] + [m for m in FALLBACK_MODELS if m != self._model]
+        last_error = None
+        for m in models_to_try:
+            try:
+                response = self._client.chat.completions.create(
+                    model=m,
+                    messages=[
+                        {"role": "system", "content": _SYSTEM_PROMPT},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    temperature=0.5,
+                    max_tokens=4096,
+                )
+                return response.choices[0].message.content
+            except Exception as e:
+                err_str = str(e)
+                if "model_not_found" in err_str or "404" in err_str or "does not exist" in err_str:
+                    last_error = e
+                    continue
+                raise e
+        if last_error:
+            raise last_error
 
     def _parse_response(self, raw: str) -> TailoredSections:
         content = raw.strip()
