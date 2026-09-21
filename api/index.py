@@ -59,6 +59,20 @@ async def tailor_resume(body: TailorRequest):
         tailored = client.tailor(body.job_description, _master, body.user_instructions)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        err_msg = str(e)
+        if "401" in err_msg or "invalid_api_key" in err_msg.lower():
+            raise HTTPException(
+                status_code=401,
+                detail="Groq API key is invalid or expired. Please update GROQ_API_KEY in your .env file and Vercel Environment Variables."
+            )
+        elif "429" in err_msg or "rate_limit" in err_msg.lower():
+            raise HTTPException(
+                status_code=429,
+                detail="Groq API rate limit reached. Please wait a few moments and try again."
+            )
+        else:
+            raise HTTPException(status_code=500, detail=f"LLM Error: {err_msg}")
 
     jd_keywords = {k.lower() for k in tailored.extracted_keywords}
 
