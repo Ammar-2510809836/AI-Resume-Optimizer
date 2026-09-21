@@ -68,22 +68,10 @@ bullet_id examples: "fhk_0", "techbit_2", "dairy_sentinel_1"
 Use the IDs shown in [brackets] in the resume."""
 
 
-FALLBACK_MODELS = [
-    "llama-3.3-70b-versatile",
-    "deepseek-r1-distill-llama-70b",
-    "llama-3.1-70b-versatile",
-    "qwen-2.5-coder-32b",
-    "deepseek-r1-distill-qwen-32b",
-    "llama3-70b-8192",
-    "llama-3.1-8b-instant",
-    "mixtral-8x7b-32768",
-]
-
-
 class LLMClient:
     def __init__(self, api_key: str, model: str = "llama-3.3-70b-versatile"):
         self._client = Groq(api_key=api_key)
-        self._model = model
+        self._preferred_model = model
 
     def tailor(self, jd: str, resume: MasterResume, user_instructions: str | None = None) -> TailoredSections:
         prompt = self._build_prompt(jd, resume, user_instructions)
@@ -104,8 +92,29 @@ class LLMClient:
             prompt += f"\n\nADDITIONAL INSTRUCTIONS:\n{user_instructions}"
         return prompt
 
+    def _get_active_models(self) -> list[str]:
+        """Dynamically query Groq API (GET /v1/models) to fetch only active non-deprecated models."""
+        try:
+            res = self._client.models.list()
+            active = []
+            for m in res.data:
+                m_id = m.id
+                m_lower = m_id.lower()
+                # Skip non-chat, audio, whisper, or guard models
+                if any(skip in m_lower for skip in ["whisper", "guard", "embed", "safeguard", "audio", "tts"]):
+                    continue
+                active.append(m_id)
+            if active:
+                if self._preferred_model in active:
+                    active.remove(self._preferred_model)
+                    active.insert(0, self._preferred_model)
+                return active
+        except Exception:
+            pass
+        return [self._preferred_model]
+
     def _call_groq(self, user_prompt: str) -> str:
-        models_to_try = [self._model] + [m for m in FALLBACK_MODELS if m != self._model]
+        models_to_try = self._get_active_models()
         last_error = None
         for m in models_to_try:
             try:
