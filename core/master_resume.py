@@ -91,15 +91,17 @@ class MasterResume:
                     "Python", "FastAPI", "TypeScript/JavaScript", "C/C++", "Embedded C", "Bash",
                 ],
                 "IoT & Embedded Systems": [
-                    "ESP32/Arduino/ARM", "Impedance Spectroscopy",
-                    "Fault-Tolerant Edge Computing", "PCB Design", "MQTT",
+                    "ATSAMD21 (Arduino MKR NB 1500)", "ESP32/Arduino/ARM", "Embedded C/C++",
+                    "Battery Management Systems (BMS)", "State Machines", "Modbus RTU",
+                    "InfluxDB", "Impedance Spectroscopy", "Fault-Tolerant Edge Computing",
+                    "PCB Design", "MQTT", "NB-IoT/LTE-M",
                 ],
                 "Protocols & APIs": [
-                    "REST APIs", "WebSocket", "HTTP/HTTPS", "I2C", "SPI",
+                    "REST APIs", "WebSocket", "HTTP/HTTPS", "I2C", "SPI", "Modbus RTU",
                     "Telegram Bot API", "Google Drive/Sheets API",
                 ],
                 "Tools & Observability": [
-                    "Linux/Ubuntu", "Git/GitHub", "Grafana", "Prometheus",
+                    "Linux/Ubuntu", "Git/GitHub", "Grafana", "Prometheus", "InfluxDB",
                     "ELK Stack", "NGINX", "MATLAB Simulink",
                 ],
             },
@@ -111,10 +113,10 @@ class MasterResume:
                     location="Kufstein, Austria",
                     role_slug="fhk",
                     bullets=[
-                        "<strong>Overview & LLM Integration:</strong> Engineered an LLM/ML telemetry interpretation framework using LLaMA 3.3 70B to analyze real-time alpine weather sensor feeds, predicting slope hazard conditions and enhancing avalanche safety for ski resort management.",
-                        "<strong>Hardware & Edge AI (Alpine Sisu Project):</strong> Architected the <i>Alpine Weatherstation Sisu</i> IoT telemetry system (ESP32, impedance spectroscopy), engineering fault-tolerant edge computing nodes capable of continuous liquid water content (LWC) and snow density measurement under extreme sub-zero weather.",
-                        "<strong>Telemetry & Cloud Pipeline:</strong> Designed a secure zero-loss MQTT telemetry pipeline and interactive Grafana monitoring dashboards, achieving <strong>99.8% packet delivery reliability</strong> across harsh alpine environments.",
-                        "<strong>Outcome & Measurable Impact:</strong> Reduced manual slope inspection cycles by <strong>35%</strong> and automated real-time hazard alerts for ski slope operations, delivering continuous high-precision snow quality telemetry.",
+                        "<strong>Project Overview & Deployment:</strong> Developed and deployed <i>SISU</i>, an autonomous, cold-climate alpine weather station and snow-monitoring IoT platform on ATSAMD21 using C/C++, achieving continuous autonomous operation in sub-zero alpine environments and increasing station uptime by <strong>90%</strong>.",
+                        "<strong>Deterministic Embedded System Architecture:</strong> Architected a cooperative non-blocking state machine in C/C++ on ATSAMD21 (Arduino MKR NB 1500) featuring zero dynamic memory allocation (malloc/heap-free hot paths) and hardware watchdog integration (WDT) for <strong>99.9%+ autonomous uptime</strong>.",
+                        "<strong>Fault-Tolerant OTA & Anti-Bricking Architecture:</strong> Engineered a remote Over-The-Air (OTA) firmware update system over NB-IoT with 16 KB chunked HTTP downloads, post-download CRC32 verification, and an autonomous 3-strike rollback mechanism to golden.bin on boot failure. Added battery voltage gating (>=12.0V) and SMS-authorized trigger commands.",
+                        "<strong>Telemetry & Cloud Pipeline:</strong> Designed a secure zero-loss MQTT/Modbus telemetry pipeline and interactive Grafana/InfluxDB monitoring dashboards, increasing overall telemetry transmission reliability to <strong>99.8%</strong> across harsh sub-zero alpine environments.",
                     ],
                 ),
                 ExperienceEntry(
@@ -133,14 +135,16 @@ class MasterResume:
             ],
             projects=[
                 ProjectEntry(
-                    title="Alpine Weatherstation Sisu (IoT & AI Avalanche Safety)",
-                    tech="ESP32, Impedance Spectroscopy, Python, MQTT, LLaMA 3.3 70B, Grafana, Edge Computing",
+                    title="Alpine Weatherstation Sisu",
+                    tech="ATSAMD21, Embedded C/C++, BMS, State Machines, Modbus RTU, NB-IoT/LTE-M, InfluxDB, HTTP, GitHub Actions",
                     date="2026 – Present",
                     project_slug="alpine_sisu",
                     bullets=[
-                        "<strong>Overview & Role:</strong> Lead Hardware & AI Systems Engineer for the <i>Alpine Weatherstation Sisu</i> project (4115fc94-06f5-478b-8f43-5c90dd754642), designing an autonomous alpine weather station for real-time snowpack and environmental monitoring.",
-                        "<strong>Technical Execution:</strong> Built impedance spectroscopy sensors and ESP32 edge firmware for continuous snow density, LWC, and temperature profiling, integrated with an LLM conversational query interface for slope operators.",
-                        "<strong>Measurable Outcome:</strong> Achieved <strong>99.8% telemetry transmission uptime</strong> under sub-zero alpine conditions and accelerated emergency avalanche risk assessment response times by <strong>45%</strong>.",
+                        "Architected 'SISU', a mission-critical Alpine Weather Station and snow-monitoring IoT platform on ATSAMD21 using C/C++, increasing station autonomous uptime by <strong>90%</strong> in sub-zero alpine environments.",
+                        "Architected a cooperative non-blocking state machine in C/C++ on ATSAMD21 (Arduino MKR NB 1500) featuring zero dynamic memory allocation (malloc/heap-free hot paths) and hardware watchdog integration (WDT) for <strong>99.9%+ autonomous uptime</strong>.",
+                        "Developed a secure, anti-bricking Over-The-Air (OTA) firmware pipeline over cellular (NB-IoT/LTE-M) using HTTP 16 KB range-chunking, IEEE 802.3 CRC32 verification, and SDU bootloader integration on ATSAMD21.",
+                        "Implemented an autonomous dual-stage firmware verification engine featuring a 30-minute TRIAL_RUN state, brownout voltage gating (>=12.0V), and automated 3-strike rollback to 'golden.bin', boosting telemetry transmission reliability to <strong>99.8%</strong>.",
+                        "Integrated an out-of-band SMS-triggered OTA command interface with PIN-based authorization, and automated the end-to-end CI/CD firmware release pipeline via GitHub Actions to compile dual targets (Production -Os / Dev -O0).",
                     ],
                 ),
                 ProjectEntry(

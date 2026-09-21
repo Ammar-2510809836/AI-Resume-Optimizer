@@ -21,10 +21,11 @@ RULES:
 - Return ONLY valid JSON — no markdown fences, no extra text.
 - Never invent job titles, companies, dates, or metrics for existing work experience entries.
 - Rewrite the professional tagline to align with the core job title/focus of the job description, keeping it concise and punchy.
-- Deeply reframe and rewrite the framing, context, and wording of the summary, projects, and work experience bullets to align perfectly with the target role's core responsibilities and professional language.
-- Rephrase bullet points to emphasize relevant skills; preserve all numbers, facts, and metrics exactly.
-- Make numbers, percentages, and key performance indicators (KPIs) highly prominent by wrapping them in <strong> tags (e.g., <strong>99.9% uptime</strong> or <strong>40% reduction</strong>).
-- Ensure tailored bullets remain outcome-driven, highlighting quantified results and metrics prominently.
+- Deeply reframe and rewrite the summary, projects, and work experience bullets to align perfectly with the target role.
+- FOCUS ON ACHIEVEMENTS, NOT JOB DESCRIPTIONS: State specifically what YOU contributed, engineered, or changed (e.g., "Developed 6 custom components and integrated REST APIs" instead of "Worked on the frontend").
+- Explicitly demonstrate relevant skills across programming languages, frameworks, libraries, APIs/integrations, cloud/DevOps, and dev tools.
+- Make numbers, percentages, and metrics highly prominent by wrapping them in <strong> tags (e.g., <strong>90% uptime increase</strong> or <strong>35% reduction in data entry</strong>).
+- Ensure every project bullet includes: 1) Overview/Context, 2) Tech Stack & APIs, 3) Specific Contribution, and 4) Measurable Result showing what changed because of your work.
 - Reorder skill categories and items by relevance to the JD.
 - Dynamically extract a list of 5-15 high-fidelity ATS keywords from the job description and return them under "extracted_keywords".
 
@@ -33,10 +34,10 @@ PROJECT EVALUATION & CREATION RULES:
 2. "suggested_new_projects": IF the Job Description emphasizes key skills, frameworks, or domain requirements (e.g., specific AI tools, cloud architectures, or industry domains) that are NOT directly covered by existing projects in the Master Resume, generate 1 to 2 NEW realistic project entries tailored to the JD.
    - Each suggested new project must contain:
      - "title": A professional project title matching JD domain requirements.
-     - "tech": Relevant technical stack string highlighting JD technologies.
+     - "tech": Comprehensive tech stack string (languages, frameworks, libraries, cloud/DevOps, APIs).
      - "date": Realistic date (e.g., "2025" or "2024").
      - "project_slug": Unique slug starting with "new_proj_" (e.g., "new_proj_fintech_agent").
-     - "bullets": Array of 2-3 detailed, outcome-oriented bullet points with <strong> metrics.
+     - "bullets": Array of 2-3 detailed, achievement-oriented bullets highlighting specific contributions and <strong> metrics (what changed because of your work).
    - If existing projects already cover the JD requirements well, return an empty array `[]` for "suggested_new_projects".
 
 JSON SCHEMA (return exactly this structure):
@@ -53,12 +54,12 @@ JSON SCHEMA (return exactly this structure):
   "suggested_new_projects": [
     {
       "title": "Project Title",
-      "tech": "Python, Docker, FastAPI",
+      "tech": "Python, Docker, FastAPI, REST APIs, AWS",
       "date": "2025",
       "project_slug": "new_proj_1",
       "bullets": [
         "Architected... achieving <strong>98% accuracy</strong>.",
-        "Built... reducing latency by <strong>30%</strong>."
+        "Built 5 microservice endpoints and integrated REST APIs, reducing manual data entry by <strong>40%</strong>."
       ]
     }
   ]

@@ -245,6 +245,12 @@ export function DiffViewer({
     }
   }
 
+  const [disabledKeywords, setDisabledKeywords] = useState<Record<string, boolean>>({})
+
+  const toggleKeyword = (kw: string) => {
+    setDisabledKeywords(prev => ({ ...prev, [kw]: !prev[kw] }))
+  }
+
   return (
     <div className="flex flex-col gap-4">
 
@@ -463,15 +469,15 @@ export function DiffViewer({
         </div>
       )}
 
-      {/* Add Custom Personal Bullet Bar */}
-      <div className="bg-purple-50/40 rounded-xl p-3 border border-purple-100 flex flex-col md:flex-row gap-2 items-center">
-        <div className="flex-1 flex gap-2 w-full">
+      {/* Fixed Responsive Add Custom Personal Bullet Bar */}
+      <div className="bg-purple-50/40 rounded-xl p-3 border border-purple-100 flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+        <div className="flex-1 flex flex-col sm:flex-row gap-2 min-w-0">
           <select
             value={customBulletRole}
             onChange={e => setCustomBulletRole(e.target.value)}
-            className="p-2 border border-purple-200 rounded-lg text-xs text-[#2c3e50] bg-white font-semibold outline-none"
+            className="p-2 border border-purple-200 rounded-lg text-xs text-[#2c3e50] bg-white font-semibold outline-none sm:max-w-[200px] truncate"
           >
-            <option value="">Select Section to Add Custom Bullet...</option>
+            <option value="">Select Section...</option>
             <option value="fhk">Experience: FH Kufstein</option>
             <option value="techbit">Experience: TechBit Systems</option>
             {projects.map(p => (
@@ -483,7 +489,7 @@ export function DiffViewer({
             placeholder="Write custom personal bullet point..."
             value={customBulletText}
             onChange={e => setCustomBulletText(e.target.value)}
-            className="flex-1 p-2 border border-purple-200 rounded-lg text-xs bg-white outline-none"
+            className="flex-1 min-w-0 p-2 border border-purple-200 rounded-lg text-xs bg-white outline-none"
           />
         </div>
         <button
@@ -494,22 +500,39 @@ export function DiffViewer({
             }
           }}
           disabled={!customBulletRole || !customBulletText.trim()}
-          className="px-4 py-2 bg-purple-600 text-white rounded-lg text-xs font-semibold hover:bg-purple-700 disabled:opacity-40 transition-colors shrink-0"
+          className="px-4 py-2 bg-purple-600 text-white rounded-lg text-xs font-semibold hover:bg-purple-700 disabled:opacity-40 transition-colors shrink-0 whitespace-nowrap"
         >
           + Add Personal Bullet
         </button>
       </div>
 
-      {/* ATS Keywords Pill Container */}
+      {/* Interactive ATS Keywords Pill Container with Cancel / Select Toggle */}
       {extractedKeywords.length > 0 && (
         <div className="bg-[#f0f4f8] rounded-xl p-3.5 border border-blue-100/50">
-          <p className="font-semibold text-[10px] text-[#0F4C81] uppercase tracking-wider mb-2">🎯 Targeted ATS Keywords</p>
+          <div className="flex justify-between items-center mb-2">
+            <p className="font-semibold text-[10px] text-[#0F4C81] uppercase tracking-wider">🎯 Targeted ATS Keywords</p>
+            <span className="text-[10px] text-gray-400 lowercase italic">(click keyword to unselect / cancel)</span>
+          </div>
           <div className="flex flex-wrap gap-1.5">
-            {extractedKeywords.map((kw, i) => (
-              <span key={i} className="text-[11px] font-semibold bg-white text-[#0F4C81] px-2.5 py-0.5 rounded-full border border-blue-200/50 shadow-2xs">
-                {kw}
-              </span>
-            ))}
+            {extractedKeywords.map((kw, i) => {
+              const isDisabled = !!disabledKeywords[kw]
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => toggleKeyword(kw)}
+                  title={isDisabled ? 'Click to re-enable keyword' : 'Click to unselect/cancel keyword'}
+                  className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border transition-all cursor-pointer flex items-center gap-1 select-none ${
+                    isDisabled
+                      ? 'bg-gray-100 text-gray-400 border-gray-200 line-through opacity-60 hover:opacity-100'
+                      : 'bg-white text-[#0F4C81] border-blue-200/80 shadow-2xs hover:border-blue-400 hover:bg-blue-50/50'
+                  }`}
+                >
+                  <span>{isDisabled ? '✕' : '✓'}</span>
+                  <span>{kw}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
       )}
