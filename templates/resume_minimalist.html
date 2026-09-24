@@ -184,7 +184,7 @@
                     <h3>{{ edu.degree }}</h3>
                     <span class="date-location">{{ edu.date }}</span>
                 </div>
-                <div class="company-name">{{ edu.school }} | {{ edu.location }}</div>
+                <div class="company-name">{{ edu.school }}{% if edu.location %} | {{ edu.location }}{% endif %}</div>
             </div>
             {% endfor %}
         </section>

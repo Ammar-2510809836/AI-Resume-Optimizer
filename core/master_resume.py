@@ -191,7 +191,7 @@ class MasterResume:
                 {
                     "degree": "Bachelor of Science (B.Sc.) – Electrical Engineering (Power Systems)",
                     "school": "National University of Computer & Emerging Sciences",
-                    "location": "Pakistan",
+                    "location": "",
                     "date": "Graduated 2021",
                 },
             ],
