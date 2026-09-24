@@ -143,6 +143,7 @@
         <section>
             <h2>Experience</h2>
             {% for exp in experience %}
+            {% if exp.bullets and exp.bullets | length > 0 %}
             <div class="entry">
                 <div class="entry-header">
                     <h3>{{ exp.title }}</h3>
@@ -151,10 +152,13 @@
                 <div class="company-name">{{ exp.company }}</div>
                 <ul>
                     {% for bullet in exp.bullets %}
+                    {% if bullet and bullet.strip() %}
                     <li>{{ bullet | safe }}</li>
+                    {% endif %}
                     {% endfor %}
                 </ul>
             </div>
+            {% endif %}
             {% endfor %}
         </section>
         {% endif %}
@@ -163,6 +167,7 @@
         <section>
             <h2>Projects</h2>
             {% for proj in projects %}
+            {% if proj.bullets and proj.bullets | length > 0 %}
             <div class="entry">
                 <div class="entry-header">
                     <h3>{{ proj.title }}</h3>
@@ -171,10 +176,13 @@
                 <div class="project-tech">// {{ proj.tech }}</div>
                 <ul>
                     {% for bullet in proj.bullets %}
+                    {% if bullet and bullet.strip() %}
                     <li>{{ bullet | safe }}</li>
+                    {% endif %}
                     {% endfor %}
                 </ul>
             </div>
+            {% endif %}
             {% endfor %}
         </section>
         {% endif %}

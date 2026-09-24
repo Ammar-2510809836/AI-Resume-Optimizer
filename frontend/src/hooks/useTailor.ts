@@ -315,18 +315,23 @@ function buildApprovedSections(
   sections.skills = editableSkills
 
   for (const diff of diffs) {
-    const useNew = approvals[diff.section_id] ?? true
-    let text = useNew ? diff.tailored : diff.original
+    const isApproved = approvals[diff.section_id] ?? true
+    let text = ''
 
-    // Check if user provided manual edit override
+    // If user provided a manual edit override
     if (manualEdits[diff.section_id] !== undefined) {
-      text = manualEdits[diff.section_id]
+      text = manualEdits[diff.section_id].trim()
+    } else if (isApproved) {
+      text = diff.tailored.trim()
+    } else {
+      // If user clicked ❌ (rejected/crossed), set text to empty string so bullet is completely removed
+      text = ''
     }
 
     if (diff.section_id === 'summary') {
-      sections.summary = text
+      sections.summary = manualEdits['summary'] ?? (isApproved ? diff.tailored : diff.original)
     } else if (diff.section_id === 'tagline') {
-      sections.tagline = text
+      sections.tagline = manualEdits['tagline'] ?? (isApproved ? diff.tailored : diff.original)
     } else if (diff.section_id.startsWith('skills_')) {
       // handled via sections.skills = editableSkills
     } else {
@@ -334,10 +339,10 @@ function buildApprovedSections(
     }
   }
 
-  // Include user-added custom bullets (e.g. fhk_custom_0)
+  // Include user-added custom bullets (e.g. fhk_custom_0) if not empty
   Object.entries(manualEdits).forEach(([key, val]) => {
-    if (key.includes('_custom_')) {
-      sections.bullets![key] = val
+    if (key.includes('_custom_') && val.trim()) {
+      sections.bullets![key] = val.trim()
     }
   })
 

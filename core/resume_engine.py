@@ -26,13 +26,18 @@ class ResumeEngine:
             bullets = []
             for i, b in enumerate(exp.bullets):
                 b_key = f"{exp.role_slug}_{i}"
-                bullets.append(approved_bullets.get(b_key, b))
+                val = approved_bullets.get(b_key, b)
+                if val and val.strip():
+                    bullets.append(val.strip())
             # Include any user-added custom bullets for this role
             c_idx = 0
             while f"{exp.role_slug}_custom_{c_idx}" in approved_bullets:
-                bullets.append(approved_bullets[f"{exp.role_slug}_custom_{c_idx}"])
+                c_val = approved_bullets[f"{exp.role_slug}_custom_{c_idx}"]
+                if c_val and c_val.strip():
+                    bullets.append(c_val.strip())
                 c_idx += 1
-            experience.append({**exp.__dict__, "bullets": bullets})
+            if bullets:
+                experience.append({**exp.__dict__, "bullets": bullets})
 
         projects = []
         for proj in self._master.projects:
@@ -41,12 +46,17 @@ class ResumeEngine:
             bullets = []
             for i, b in enumerate(proj.bullets):
                 b_key = f"{proj.project_slug}_{i}"
-                bullets.append(approved_bullets.get(b_key, b))
+                val = approved_bullets.get(b_key, b)
+                if val and val.strip():
+                    bullets.append(val.strip())
             c_idx = 0
             while f"{proj.project_slug}_custom_{c_idx}" in approved_bullets:
-                bullets.append(approved_bullets[f"{proj.project_slug}_custom_{c_idx}"])
+                c_val = approved_bullets[f"{proj.project_slug}_custom_{c_idx}"]
+                if c_val and c_val.strip():
+                    bullets.append(c_val.strip())
                 c_idx += 1
-            projects.append({**proj.__dict__, "bullets": bullets})
+            if bullets:
+                projects.append({**proj.__dict__, "bullets": bullets})
 
         # Append custom / AI-suggested projects if not excluded
         for c_proj in custom_projects:
@@ -56,14 +66,17 @@ class ResumeEngine:
             p_bullets = []
             for i, b in enumerate(c_proj.get("bullets", [])):
                 b_key = f"{p_slug}_{i}"
-                p_bullets.append(approved_bullets.get(b_key, b))
-            projects.append({
-                "title": c_proj.get("title", "New Project"),
-                "tech": c_proj.get("tech", ""),
-                "date": c_proj.get("date", "2025"),
-                "project_slug": p_slug,
-                "bullets": p_bullets,
-            })
+                val = approved_bullets.get(b_key, b)
+                if val and val.strip():
+                    p_bullets.append(val.strip())
+            if p_bullets:
+                projects.append({
+                    "title": c_proj.get("title", "New Project"),
+                    "tech": c_proj.get("tech", ""),
+                    "date": c_proj.get("date", "2025"),
+                    "project_slug": p_slug,
+                    "bullets": p_bullets,
+                })
 
         template_files = {
             "modern": "resume.html",
