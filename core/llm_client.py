@@ -119,18 +119,36 @@ class LLMClient:
         last_error = None
         for m in models_to_try:
             try:
+                # Enforce JSON object mode on Groq hardware
                 response = self._client.chat.completions.create(
                     model=m,
                     messages=[
                         {"role": "system", "content": _SYSTEM_PROMPT},
                         {"role": "user", "content": user_prompt},
                     ],
-                    temperature=0.5,
-                    max_tokens=4096,
+                    response_format={"type": "json_object"},
+                    temperature=0.4,
+                    max_tokens=8192,
                 )
                 return response.choices[0].message.content
             except Exception as e:
                 err_str = str(e).lower()
+                # If json_object mode is not supported by a specific model, try without response_format
+                if "response_format" in err_str:
+                    try:
+                        response = self._client.chat.completions.create(
+                            model=m,
+                            messages=[
+                                {"role": "system", "content": _SYSTEM_PROMPT},
+                                {"role": "user", "content": user_prompt},
+                            ],
+                            temperature=0.4,
+                            max_tokens=8192,
+                        )
+                        return response.choices[0].message.content
+                    except Exception as inner_e:
+                        e = inner_e
+
                 if any(kw in err_str for kw in [
                     "model_not_found", "model_decommissioned", "decommissioned",
                     "not exist", "not supported", "404", "invalid_request_error"
@@ -143,17 +161,26 @@ class LLMClient:
 
     def _parse_response(self, raw: str) -> TailoredSections:
         content = raw.strip()
+        # Remove markdown code fences if present
         if content.startswith("```"):
             parts = content.split("```")
-            content = parts[1]
-            if content.startswith("json"):
-                content = content[4:]
+            if len(parts) > 1:
+                content = parts[1]
+                if content.startswith("json"):
+                    content = content[4:]
+
+        # Extract strictly from first '{' to last '}'
+        first_brace = content.find('{')
+        last_brace = content.rfind('}')
+        if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
+            content = content[first_brace:last_brace + 1]
+
         data = json.loads(content.strip())
         return TailoredSections(
-            summary=data["summary"],
+            summary=data.get("summary", ""),
             tagline=data.get("tagline", ""),
-            skills=data["skills"],
-            bullets=data["bullets"],
+            skills=data.get("skills", {}),
+            bullets=data.get("bullets", {}),
             extracted_keywords=data.get("extracted_keywords", []),
             project_relevance=data.get("project_relevance", {}),
             suggested_new_projects=data.get("suggested_new_projects", []),
